@@ -111,6 +111,7 @@ def test_compute_differential_flux_points():
 def test_energy_lafferty_power_law():
     """Checks spectral index = 2 gives same result as log bin center.
     """
+    # Add two points and run the method with the 6 different options (parameters) 
     energy_min = 10
     energy_max = 100
     spectral_index = -2
