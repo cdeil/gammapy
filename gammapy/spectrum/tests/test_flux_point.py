@@ -4,7 +4,9 @@ from __future__ import print_function, division
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.table import Table
-from ..flux_point import _x_lafferty, _integrate, _ydiff_excess_equals_expected, compute_differential_flux_points, _energy_lafferty_power_law
+from ..flux_point import (_x_lafferty, _integrate, _ydiff_excess_equals_expected,
+                          compute_differential_flux_points,
+                          _energy_lafferty_power_law)
 
 
 def test_x_lafferty():
@@ -56,9 +58,10 @@ def test_ydiff_excess_equals_expected():
     # Compare
     assert_allclose(actual, desired, rtol=1e-6)
 
-
+# TODO: Refactor this
 def test_compute_differential_flux_points():
     # Test data
+    # Test power law case
     desired = [1.81535907e-11, 3.65324908e-11, 4.91195774e-11, 7.08774745e-11]
     int_fluxes = [3.63022297799e-11, 2.55718656562e-10, 9.82378126447e-10,
                   4.96140616902e-09]
@@ -78,19 +81,40 @@ def test_compute_differential_flux_points():
                                                  y_method='power_law')
     actual = power_law['DIFF_FLUX']
     # Test flux
-    assert_allclose(actual, desired, rtol=1e-2)
+    assert_allclose(actual, desired, rtol=1e-3)
     # Test error
     actual = power_law['DIFF_FLUX_ERR']
     desired = 0.1 * power_law['DIFF_FLUX']
-    assert_allclose(actual, desired, rtol=1e-6)
+    assert_allclose(actual, desired, rtol=1e-3)
+
+    #Test general model case
+    model = lambda x: x ** 2
+    desired = [1.81535907e-11, 3.65324908e-11, 4.91195774e-11, 7.08774745e-11]
+    int_fluxes = [3.62694917507e-11, 2.55648597302e-10, 9.82289534194e-10,
+                  4.96127024375e-09]
+    int_flux_errors = [3.62694917507e-12, 2.55648597302e-11, 9.82289534194e-11,
+                       4.96127024375e-10]
+    table['INT_FLUX'] = int_fluxes
+    table['INT_FLUX_ERR'] = int_flux_errors
+    model = compute_differential_flux_points(table=table,
+                                                 x_method='lafferty',
+                                                 y_method='model', model=model)
+    # Test flux
+    actual = model['DIFF_FLUX']
+    assert_allclose(actual, desired, rtol=1e-3)
+    # Test error
+    actual = model['DIFF_FLUX_ERR']
+    desired = 0.1 * model['DIFF_FLUX']
+    assert_allclose(actual, desired, rtol=1e-3)
 
 
 def test_energy_lafferty_power_law():
-    """Checks spectral index = -2 gives same result as log bin center.
+    """Checks spectral index = 2 gives same result as log bin center.
     """
     energy_min = 10
     energy_max = 100
     spectral_index = -2
+
     desired = np.sqrt(energy_min * energy_max)
     actual = _energy_lafferty_power_law(energy_min, energy_max, spectral_index)
     assert_allclose(actual, desired, rtol=1e-6)

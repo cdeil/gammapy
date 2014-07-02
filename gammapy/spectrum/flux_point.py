@@ -2,6 +2,7 @@
 """Differential and integral flux point computations."""
 from __future__ import print_function, division
 import numpy as np
+from .powerlaw import  _conversion_factor, power_law_flux
 
 __all__ = ['compute_differential_flux_points']
 
@@ -35,7 +36,7 @@ def compute_differential_flux_points(table, x_method='lafferty',
 
     Notes
     -----
-    For usage, see also tutorial: 
+    For usage, see also tutorial:
     https://gammapy.readthedocs.org/en/latest/tutorials/flux_point.html
     """
 
@@ -46,21 +47,6 @@ def compute_differential_flux_points(table, x_method='lafferty',
         int_flux_err = np.asanyarray(table['INT_FLUX_ERR'])
     except:
         pass
-
-    # Set `model` function for all cases
-    if y_method == 'power_law':
-        g = -1 * np.abs(spectral_index)
-        # Assumes function is continuous over energy bin boundaries
-        e1 = np.min(energy_min)
-        e2 = np.max(energy_max)
-        # TODO: we shouldn't have to re-code the power-law function here.
-        # Try to find a way to re-use the existing powerlaw model.
-        model = lambda x: (x / (1 - g)) * (((e2 / x) ** (1 - g)) - ((e1 / x) ** (1 - g)))
-        # Model still required for the diff_flux calculation
-    elif y_method == 'model':
-        pass
-    else:
-        raise ValueError('Invalid y_method: {0}'.format(y_method))
     # Compute x point
     if x_method == 'table':
         energy = np.array(table['ENERGY'])
@@ -77,10 +63,15 @@ def compute_differential_flux_points(table, x_method='lafferty',
                                           table['ENERGY_MAX'], model))
     else:
         raise ValueError('Invalid x_method: {0}'.format(x_method))
-
     # Compute y point
-    diff_flux = _ydiff_excess_equals_expected(int_flux, energy_min, energy_max,
-                                            energy, model)
+    if y_method == 'power_law':
+        g = -1 * np.abs(spectral_index)
+        diff_flux = power_law_flux(int_flux, g, energy, energy_min, energy_max)
+    elif y_method == 'model':
+        diff_flux = _ydiff_excess_equals_expected(int_flux, energy_min,
+                                                  energy_max, energy, model)
+    else:
+        raise ValueError('Invalid y_method: {0}'.format(y_method))
 
     # Add to table
     table['ENERGY'] = energy
@@ -149,7 +140,6 @@ def _integrate(xmin, xmax, function, segments=1e3):
 def _energy_lafferty_power_law(energy_min, energy_max, spectral_index):
     """Analytical case for determining lafferty x-position for power law case.
     """
-    from .powerlaw import  _conversion_factor
     term1 = energy_max - energy_min
     flux_lw = _conversion_factor(spectral_index, 1, energy_min, energy_max) / term1
     return np.exp(-np.log(flux_lw) / np.abs(spectral_index))
