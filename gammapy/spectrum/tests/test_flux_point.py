@@ -93,8 +93,8 @@ def test_compute_differential_flux_points(x_method, y_method):
         if x_method == 'lafferty':
             energy = _energy_lafferty_power_law(energy_min, energy_max,
                                                 spectral_index)
-            # Test that this is equal to log center result, as
-            # analytically expected
+            # Test that this is equal to analytically expected
+            # log center result
             desired_energy = np.sqrt(energy_min * energy_max)
             assert_allclose(energy, desired_energy, rtol=1e-6)
         desired = power_law_eval(energy, 1, spectral_index, energy)

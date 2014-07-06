@@ -2,7 +2,7 @@
 """Differential and integral flux point computations."""
 from __future__ import print_function, division
 import numpy as np
-from .powerlaw import  _conversion_factor, power_law_flux
+from .powerlaw import power_law_flux
 
 __all__ = ['compute_differential_flux_points']
 
@@ -140,6 +140,10 @@ def _integrate(xmin, xmax, function, segments=1e6):
 def _energy_lafferty_power_law(energy_min, energy_max, spectral_index):
     """Analytical case for determining lafferty x-position for power law case.
     """
+    # Cannot call into gammapy.powerlaw as implementation is different
+    # due to different reference energies
+    term0 = 1 - spectral_index
     term1 = energy_max - energy_min
-    flux_lw = _conversion_factor(spectral_index, 1, energy_min, energy_max) / term1
+    term2 = 1. / term0
+    flux_lw = term2 / term1 * (energy_max ** term0 - energy_min ** term0)
     return np.exp(-np.log(flux_lw) / np.abs(spectral_index))
