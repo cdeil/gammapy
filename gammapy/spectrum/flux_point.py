@@ -8,8 +8,8 @@ __all__ = ['compute_differential_flux_points']
 
 
 def compute_differential_flux_points(table, x_method='lafferty',
-                                 y_method='power_law', model=None,
-                                 spectral_index=None):
+                                     y_method='power_law', model=None,
+                                     spectral_index=None):
     """Creates differential flux points table from integral flux points table.
 
     Parameters

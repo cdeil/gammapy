@@ -106,71 +106,69 @@ def plot_plaw():
     plt.legend()
     plt.show()
 
-def compute_flux_residuals(gamma_true, gamma_reco, method):
-    # These examples are picked as an energy bin
-    energy_min = np.array([300])
-    energy_max = np.array([1000])
-    # Realistic example
-    energies = np.array([371.2])
-    diff_flux =  power_law_eval(energies, 1, gamma_true, 1)
-    # `True' differential & integral flux
-    int_flux = power_law_integral_flux(diff_flux, gamma_true,
-                                       energies, energy_min, energy_max)
-    lafferty_flux = np.zeros(int_flux.size)
-    log_flux = np.zeros(int_flux.size)
-    indices = np.arange(int_flux.size)
-    for index in indices:
-        new_int_flux = int_flux.reshape(indices.shape)
-        table = Table()
-        table['ENERGY_MIN'] = energy_min
-        table['ENERGY_MAX'] = energy_max
-        table['INT_FLUX'] = new_int_flux[index]
-        gamma_reco = gamma_reco.reshape(indices.shape)
-        lafferty, log = get_flux_tables(table, 'power_law', None,
-                                        gamma_reco[index])
-        lafferty_flux[index]=lafferty['DIFF_FLUX'][0]
-        log_flux[index]=log['DIFF_FLUX'][0]
-    diff_flux = diff_flux.reshape((diff_flux.size, ))
-    lafferty_residuals = ((lafferty_flux-diff_flux)/diff_flux)*100
-    log_residuals = ((log_flux-diff_flux)/diff_flux)*100
-    if method == 'lafferty':
-        return lafferty_residuals.reshape(int_flux.shape)
-    elif method == 'log_center':
-        return log_residuals.reshape(int_flux.shape)
-    elif method == 'ratio':
-        return (lafferty_residuals/log_residuals).reshape(int_flux.shape)
-    
+def compute_flux_error(gamma_true, gamma_reco, method):
+    # Let's assume a concrete true spectrum and energy bin.
+    # Note that the residuals computed below do *not* depend on
+    # these parameters.
+    energy_min, energy_max = 1, 10
+    energy_ref, diff_flux_ref = 1, 1
+
+    # Compute integral flux in the energy band assuming `gamma_true`
+    int_flux = power_law_integral_flux(diff_flux_ref, gamma_true,
+                                       energy_ref, energy_min, energy_max)
+
+    # TODO: making `energy_min` and `energy_max` arrays should not be necessary
+    # ... broadcasting in `compute_differential_flux_points` should take care of it!
+    # Please also add a test!
+    energy_min = energy_min * np.ones_like(gamma_true)
+    energy_max = energy_max * np.ones_like(gamma_true)
+
+    # Put the numbers in a table
+    table = Table(dict(ENERGY_MIN=[energy_min], ENERGY_MAX=[energy_max], INT_FLUX=[int_flux]))
+
+    # Compute flux point
+    lafferty = compute_differential_flux_points(table, method, 'power_law',
+                                                spectral_index=gamma_reco)
+
+    # Compute relative error of the flux point
+    energy = table['ENERGY'][0].data
+    flux_reco = table['DIFF_FLUX'][0].data
+    flux_true = power_law_eval(energy, diff_flux_ref, gamma_true, energy_ref)
+    #flux_error = (flux_reco - flux_true) / flux_true
+    flux_error = np.log10(flux_reco / flux_true)
+
+    return flux_error
     
 def residuals_image():
-    gamma_true = np.arange(1.01, 10, 1)
-    gamma_reco = np.arange(1.01, 10, 1)
+    gamma_true = np.arange(1.01, 7, 1)
+    gamma_reco = np.arange(1.01, 7, 1)
     gamma_true, gamma_reco = np.meshgrid(gamma_true, gamma_reco)
-    residuals_lafferty = compute_flux_residuals(gamma_true,gamma_reco,
-                                                method='lafferty')
-    residuals_logcenter = compute_flux_residuals(gamma_true, gamma_reco,
-                                                 method='log_center')
-    residuals_ratio = compute_flux_residuals(gamma_true, gamma_reco,
-                                             method='ratio')
+    flux_error_lafferty = compute_flux_error(gamma_true, gamma_reco, method='lafferty')
+    flux_error_log_center = compute_flux_error(gamma_true, gamma_reco, method='log_center')
+    flux_error_ratio = flux_error_lafferty - flux_error_log_center
+
+    print(flux_error_lafferty)
+    print(flux_error_log_center)
+    #import IPython; IPython.embed()
+
+    extent = [1, 6, 1, 6]
+    vmin, vmax = -3, 3
+
     f, axarr = plt.subplots(nrows=1, ncols=3)
-    axarr.flat[0].imshow(residuals_lafferty, interpolation='nearest',
-                         extent=[np.min(gamma_reco), np.max(gamma_reco),
-                                 np.min(gamma_true), np.max(gamma_true)],
-                         origin="lower")
+    axarr.flat[0].imshow(flux_error_lafferty, interpolation='nearest',
+                         extent=extent, origin="lower", vmin=vmin, vmax=vmax)
     axarr.flat[0].set_xlabel('Assumed Spectral Index')
     axarr.flat[0]. set_ylabel('True Spectral Index')
-    axarr.flat[1].imshow(residuals_logcenter, interpolation='nearest',
-                         extent=[np.min(gamma_reco), np.max(gamma_reco),
-                                 np.min(gamma_true), np.max(gamma_true)],
-                         origin="lower")
+    axarr.flat[1].imshow(flux_error_log_center, interpolation='nearest',
+                         extent=extent, origin="lower", vmin=vmin, vmax=vmax)
     axarr.flat[1].set_xlabel('Assumed Spectral Index')
     axarr.flat[1]. set_ylabel('True Spectral Index')
-    axarr.flat[2].imshow(residuals_ratio, interpolation='nearest',
-                         extent=[np.min(gamma_reco), np.max(gamma_reco),
-                                 np.min(gamma_true), np.max(gamma_true)],
-                         origin="lower")
+    axarr.flat[2].imshow(flux_error_ratio, interpolation='nearest',
+                         extent=extent, origin="lower", vmin=vmin, vmax=vmax)
     axarr.flat[2].set_xlabel('Assumed Spectral Index')
     axarr.flat[2]. set_ylabel('True Spectral Index')
     plt.show()
+    #plt.colorbar()
 
     
 def make_x_plot():
