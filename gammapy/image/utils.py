@@ -8,35 +8,37 @@ from astropy.io import fits
 from astropy.wcs import WCS
 
 
-__all__ = ['atrous_hdu',
-           'atrous_image',
-           'bin_events_in_cube',
-           'bin_events_in_image',
-           'binary_dilation_circle',
-           'binary_disk',
-           'binary_opening_circle',
-           'binary_ring',
-           'contains',
-           'coordinates',
-           'cube_to_image',
-           'cube_to_spec',
-           'crop_image',
-           'disk_correlate',
-           'exclusion_distance',
-           'image_groupby',
-           'images_to_cube',
-           'make_empty_image',
-           'make_header',
-           'paste_cutout_into_image',
-           'process_image_pixels',
-           'block_reduce_hdu',
-           'ring_correlate',
-           'separation',
-           'solid_angle',
-           'threshold',
-           'wcs_histogram2d',
-           'lon_lat_rectangle_mask',
-           ]
+__all__ = sorted(['atrous_hdu',
+                  'atrous_image',
+                  'bin_events_in_cube',
+                  'bin_events_in_image',
+                  'binary_dilation_circle',
+                  'binary_disk',
+                  'binary_opening_circle',
+                  'binary_ring',
+                  'contains',
+                  'coordinates',
+                  'cube_to_image',
+                  'cube_to_spec',
+                  'crop_image',
+                  'downsample',
+                  'dict_to_hdulist',
+                  'disk_correlate',
+                  'exclusion_distance',
+                  'image_groupby',
+                  'images_to_cube',
+                  'make_empty_image',
+                  'make_header',
+                  'paste_cutout_into_image',
+                  'process_image_pixels',
+                  'block_reduce_hdu',
+                  'upsample',
+                  'ring_correlate',
+                  'separation',
+                  'solid_angle',
+                  'threshold',
+                  'wcs_histogram2d',
+                  'lon_lat_rectangle_mask', ])
 
 
 def _get_structure_indices(radius):
@@ -143,6 +145,81 @@ def ring_correlate(image, r_in, r_out, mode='constant'):
     return convolve(image, structure, mode=mode)
 
 
+def downsample(image, factor, method=np.nansum, pad=True, shape=(512, 9472)):
+    """
+    Down sample image by a power of two.
+
+    The image is downsampled using `scikit-image.measure.block_reduce`. Only
+    down sampling factor, that are a power of two are allowed. The image is
+    padded to a given size using the 'reflect' method, before the down sampling
+    is done.
+
+    Parameters
+    ----------
+    image : ndarray
+        Image to be down sampled.
+    factor : int
+        Down sampling factor, must be power of two.
+    method : np.ufunc (np.nansum)
+        Method how to combine the image blocks.
+    pad : bool
+        Whether to pad the image at the boundaries. The image is padded
+        symmetrically in x and y direction.
+    shape : tuple (512, 9472)
+        Shape of the padded image.
+
+    Returns
+    -------
+    image : ndarray
+        Down sampled image.
+    """
+    from skimage.measure import block_reduce
+    if not np.log2(factor).is_integer():
+        raise ValueError('Downsampling factor must be power of 2.')
+    factor = int(factor)
+    if pad:
+        x_pad = (shape[1] - image.shape[1]) // 2
+        y_pad = (shape[0] - image.shape[0]) // 2
+        image = np.pad(image, ((y_pad, y_pad), (x_pad, x_pad)), mode='reflect')
+    return block_reduce(image, (factor, factor), method)
+
+
+def upsample(image, factor, order=3, crop=True, shape=(500, 9400)):
+    """
+    Up sample image by a power of two.
+
+    Parameters
+    ----------
+    image : ndarray
+        Image to be up sampled.
+    factor : int
+        up sampling factor, must be power of two.
+    order : np.ufunc (np.nansum)
+        Method how to combine the image blocks.
+    crop : bool
+        Whether to crop the image at the boundaries. The image is cropped
+        symmetrically in x and y direction.
+    shape : tuple (500, 9400)
+        Shape of the cropped image.
+
+    Returns
+    -------
+    image : ndarray
+        Down sampled image.
+    """
+    from scipy.ndimage import zoom
+    if not np.log2(factor).is_integer():
+        raise ValueError('Up sampling factor must be power of 2.')
+    factor = int(factor)
+    if crop:
+        x_crop = (factor * image.shape[1] - shape[1]) // 2
+        y_crop = (factor * image.shape[0] - shape[0]) // 2
+        # Sample up result and crop to original size
+        return zoom(image, factor, order=order)[y_crop:-y_crop, x_crop:-x_crop]
+    else:
+        return zoom(image, factor, order=order)
+
+
 def exclusion_distance(exclusion):
     """Distance to nearest exclusion region.
 
@@ -233,7 +310,7 @@ def coordinates(image, world=True, lon_sym=True, radians=False, system=None):
 
     Parameters
     ----------
-    image : `~astropy.io.fits.ImageHDU`
+    image : `~astropy.io.fits.ImageHDU` or ndarray
         Input image
     world : bool
         Use world coordinates (or pixel coordinates)?
@@ -254,10 +331,11 @@ def coordinates(image, world=True, lon_sym=True, radians=False, system=None):
     >>> dist = np.sqrt(lon ** 2 + lat ** 2)
     """
     # Create arrays of pixel coordinates
-    y, x = np.indices(image.data.shape, dtype='int32') + 1
-
     if not world:
+        y, x = np.indices(image.shape, dtype='int32') + 1
         return x, y
+    else:
+        y, x = np.indices(image.data.shape, dtype='int32') + 1
 
     wcs = WCS(image.header)
     lon, lat = wcs.wcs_pix2world(x, y, 1)
@@ -270,6 +348,30 @@ def coordinates(image, world=True, lon_sym=True, radians=False, system=None):
         lat = np.radians(lat)
 
     return lon, lat
+
+
+def dict_to_hdulist(image_dict, header):
+    """
+    Take a dictionary of image data and a header to create a HDUList.
+
+    Parameters
+    ----------
+    image_dict : dict
+        Dictionary of input data. The keys are used as FITS extension names.
+        Image data are the corresponding values.
+    header : `astropy.io.fits.Header`
+        Header to be used for all images.
+
+    Returns
+    -------
+    hdu_list : `astropy.io.fits.HDUList`
+        HDU list of input dictionary.
+    """
+    from astropy.io.fits import HDUList, ImageHDU
+    hdu_list = HDUList()
+    for name, image in image_dict.iteritems():
+        hdu_list.append(ImageHDU(image, header, name.upper()))
+    return hdu_list
 
 
 def separation(image, center, world=True, radians=False):
@@ -975,3 +1077,4 @@ def lon_lat_rectangle_mask(lons, lats, lon_min=None, lon_max=None,
     lat_mask = mask_lat_min & mask_lat_max
 
     return lon_mask & lat_mask
+

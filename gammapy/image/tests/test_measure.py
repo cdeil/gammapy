@@ -10,6 +10,8 @@ from ...image import (measure_labeled_regions,
                       measure_containment,
                       measure_curve_of_growth)
 
+BINSZ = 0.02
+
 try:
     import scipy
     HAS_SCIPY = True
@@ -26,17 +28,7 @@ def generate_example_image():
     image = X * Y * np.sin(X) ** 2 * np.sin(Y) ** 2
     return image
 
-
-def generate_gaussian_image():
-    """
-    Generate some greyscale image to run the detection on.
-    """
-    from astropy.io import fits
-    from astropy.modeling.models import Gaussian2D
-    from ...image import coordinates
-
-    BINSZ = 0.02
-    image = fits.ImageHDU(data=np.zeros((201, 201)))
+def set_header(image):
     image.header['SIMPLE'] = 'T'
     image.header['BITPIX'] = -64
     image.header['NAXIS'] = 2
@@ -52,6 +44,18 @@ def generate_gaussian_image():
     image.header['CDELT2'] = BINSZ
     image.header['CUNIT1'] = 'deg'
     image.header['CUNIT2'] = 'deg'
+    return image
+
+
+def generate_gaussian_image():
+    """
+    Generate some greyscale image to run the detection on.
+    """
+    from astropy.io import fits
+    from astropy.modeling.models import Gaussian2D
+    from ...image import coordinates
+    image = fits.ImageHDU(data=np.zeros((201, 201)))
+    image = set_header(image)
     GLON, GLAT = coordinates(image, lon_sym=True)
     sigma = 0.2
     source = Gaussian2D(1. / (2 * np.pi * (sigma / BINSZ) ** 2), 0, 0, sigma, sigma)
@@ -65,7 +69,6 @@ def test_measure():
     labels = np.zeros_like(image, dtype=int)
     labels[10:20, 20:30] = 1
     results = measure_labeled_regions(image, labels)
-
     # TODO: check output!
 
 

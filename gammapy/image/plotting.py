@@ -92,6 +92,52 @@ def colormap_hess(vmin, vmax, vtransition, width=0.1):
     return cmap
 
 
+def colormap_hess_gray(vmin, vmax, vtransition, width=0.1):
+    """
+    Garyscale version of the H.E.S.S. colormap.
+    
+    Parameters
+    ----------
+    vmin : float
+        Minimum value (color: black)
+    vmax : float
+        Maximum value (color: white)
+    vtransition : float
+        Transition value (color: red).
+    width : float
+        Width of the blue-red color transition (fraction in ``vmax - vmin`` range).
+
+    Returns
+    -------
+    colormap : `matplotlib.colors.LinearSegmentedColormap`
+        Colormap
+    """
+    from matplotlib.colors import LinearSegmentedColormap
+
+    # Compute normalised values (range 0 to 1) that
+    # correspond to red, blue, yellow.
+    gray = float(vtransition - vmin) / (vmax - vmin)
+
+    if width > gray:
+        dark_gray = 0.1 * gray
+    else:
+        dark_gray = gray - width
+
+    light_gray = 2. / 3. * (1 - gray) + gray
+
+    black, white = 0, 1
+
+    # Create custom colormap
+    # List entries: (value, (R, G, B))
+    colors = [(black, 'k'),
+              (dark_gray, (0.3, 0.3, 0.3)),
+              (gray, (0.5, 0.5, 0.5)),
+              (light_gray, (0.7, 0.7, 0.7)),
+              (white, 'w'),
+              ]
+    return LinearSegmentedColormap.from_list(name='hess_gray', colors=colors)
+
+
 def colormap_milagro(vmin, vmax, vtransition, width=0.0001, huestart=0.6):
     """Colormap often used in Milagro collaboration publications.
 
