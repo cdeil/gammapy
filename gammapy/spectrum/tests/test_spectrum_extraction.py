@@ -69,6 +69,8 @@ def test_spectrum_extraction(pars,results,tmpdir):
 
     ana.run(outdir=tmpdir)
 
+
+    ana.run(outdir=tmpdir)
     # test methods on SpectrumObservationList
     obslist = ana.observations
 
