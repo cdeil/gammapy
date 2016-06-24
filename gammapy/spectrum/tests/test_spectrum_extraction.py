@@ -1,50 +1,42 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
+from __future__ import absolute_import, division, print_function, unicode_literals
 import numpy as np
-import astropy.units as u
+from numpy.testing import assert_allclose
+from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import SkyCoord, Angle
 from astropy.tests.helper import pytest
 import astropy.units as u
-from numpy.testing import assert_allclose
-from astropy.tests.helper import assert_quantity_allclose
-
+from ...utils.testing import requires_dependency, requires_data
+from ...utils.energy import EnergyBounds
 from ...data import DataStore, ObservationTable, Target, ObservationList
 from ...datasets import gammapy_extra
 from ...image import ExclusionMask
 from ...background import ring_background_estimate
-from ...extern.regions.shapes import CircleSkyRegion
+from ...extern.regions import CircleSkyRegion
 from ...spectrum import (
     SpectrumExtraction,
     SpectrumObservation,
     SpectrumObservationList,
-    PHACountsSpectrum,
 )
-from ...utils.energy import EnergyBounds
-from ...utils.testing import requires_dependency, requires_data
-from ...utils.scripts import read_yaml
 
 
-@pytest.mark.parametrize("pars,results",[
-    (dict(containment_correction=False),dict(n_on=95,
-                                             aeff=549861.8268659255*u.m**2,
-                                             ethresh=0.4230466456851681*u.TeV)),
+@pytest.mark.parametrize("pars,results", [
+    (dict(containment_correction=False), dict(n_on=95,
+                                              aeff=549861.8268659255 * u.m ** 2,
+                                              ethresh=0.4230466456851681 * u.TeV)),
     (dict(containment_correction=True), dict(n_on=95,
-                                             aeff=393356.18322397786*u.m**2,
-                                             ethresh=0.6005317540449035*u.TeV)),
+                                             aeff=393356.18322397786 * u.m ** 2,
+                                             ethresh=0.6005317540449035 * u.TeV)),
 ])
 @requires_dependency('scipy')
 @requires_data('gammapy-extra')
-
-def test_spectrum_extraction(pars,results,tmpdir):
-
+def test_spectrum_extraction(pars, results, tmpdir):
     center = SkyCoord(83.63, 22.01, unit='deg', frame='icrs')
     radius = Angle('0.11 deg')
     on_region = CircleSkyRegion(center, radius)
     target = Target(on_region)
 
-    obs_id = [23523, 23592]    
+    obs_id = [23523, 23592]
     store = gammapy_extra.filename("datasets/hess-crab4-hd-hap-prod2")
     ds = DataStore.from_dir(store)
     obs = ObservationList([ds.obs(_) for _ in obs_id])
@@ -57,7 +49,7 @@ def test_spectrum_extraction(pars,results,tmpdir):
     orad = Angle('0.6 deg')
     bk = [ring_background_estimate(
         center, radius, irad, orad, _.events) for _ in obs]
-    #bk = dict(method='reflected', n_min=2, exclusion=excl)
+    # bk = dict(method='reflected', n_min=2, exclusion=excl)
 
     bounds = EnergyBounds.equal_log_spacing(1, 10, 40, unit='TeV')
     etrue = EnergyBounds.equal_log_spacing(0.1, 30, 100, unit='TeV')
@@ -68,7 +60,6 @@ def test_spectrum_extraction(pars,results,tmpdir):
                              containment_correction=pars['containment_correction'])
 
     ana.run(outdir=tmpdir)
-
 
     ana.run(outdir=tmpdir)
     # test methods on SpectrumObservationList
@@ -83,11 +74,11 @@ def test_spectrum_extraction(pars,results,tmpdir):
     assert new_list[1].obs_id == 23592
 
     ana.define_ethreshold(method_lo_threshold="AreaMax", percent_area_max=10)
-    assert_allclose(ana.observations[0].lo_threshold,results['ethresh'])
+    assert_allclose(ana.observations[0].lo_threshold, results['ethresh'])
 
-    assert_quantity_allclose(obs23523.aeff.evaluate(energy=5*u.TeV),results['aeff'])
+    assert_quantity_allclose(obs23523.aeff.evaluate(energy=5 * u.TeV), results['aeff'])
 
-    
+
 @pytest.mark.xfail(reason='This needs some changes to the API')
 @requires_data('gammapy-extra')
 def test_observation_stacking():
