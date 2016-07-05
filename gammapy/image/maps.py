@@ -47,8 +47,6 @@ class SkyMap(object):
         WCS transformation object.
     unit : str
         String specifying the data units.
-    meta : dict
-        Dictionary to store meta data.
     """
     wcs_origin = 0
 
@@ -57,7 +55,6 @@ class SkyMap(object):
         self.name = name
         self.data = data
         self.wcs = wcs
-        self.meta = meta
         self.unit = unit
 
     @classmethod
