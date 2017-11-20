@@ -1,15 +1,16 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, print_function, unicode_literals
+import pytest
+import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import astropy.units as u
-import numpy as np
-from astropy.tests.helper import assert_quantity_allclose
-import pytest
-from ...utils.testing import requires_dependency, requires_data
-from ..observation import SpectrumObservation
-from ..energy_group import (SpectrumEnergyGroups, SpectrumEnergyGroupMaker,
-                            calculate_flux_point_binning)
 from ..core import PHACountsSpectrum
+from ..observation import SpectrumObservation
+from ..energy_group import (
+    SpectrumEnergyGroupMaker, SpectrumEnergyGroups,
+    SpectrumEnergyGroup, SpectrumEnergyBin,
+)
+
 
 @pytest.fixture(scope='session')
 def obs():
@@ -24,9 +25,7 @@ def obs():
     return SpectrumObservation(on_vector=on_vector)
 
 
-@requires_data('gammapy-extra')
-@requires_dependency('scipy')
-class TestSpectrumEnergyGrouping:
+class TestSpectrumEnergyGroupMaker:
     def test_str(self, obs):
         seg = SpectrumEnergyGroupMaker(obs=obs)
         ebounds = [1.25, 5.5, 7.5] * u.TeV
@@ -62,33 +61,32 @@ class TestSpectrumEnergyGrouping:
         assert_allclose(t['energy_min'], [1, 2, 5, 7] * u.TeV)
         assert_allclose(t['energy_max'], [2, 5, 7, 10] * u.TeV)
         assert_equal(t['energy_group_n_bins'], [1, 3, 2, 3])
-        
-    def _test_adaptive(self, obs):
+
+    @pytest.mark.skip
+    def test_adaptive(self, obs):
         seg = SpectrumEnergyGroupMaker(obs=obs)
         seg.compute_range_safe()
         seg.compute_groups_adaptive(quantity='sigma', threshold=2.0)
 
-    @requires_dependency('matplotlib')
-    def _test_plot(self, seg):
-        seg.plot()
+        # TODO: add asserts
+
+@pytest.fixture()
+def groups(obs):
+    table = obs.stats_table()
+    table['bin_idx'] = np.arange(len(table))
+    table['energy_group_idx'] = table['bin_idx']
+    return SpectrumEnergyGroups.from_total_table(table)
 
 
 class TestSpectrumEnergyGroups:
-    def get_groups(self, obs):
-        table = obs.stats_table()
-        table['bin_idx'] = np.arange(len(table))
-        table['energy_group_idx'] = table['bin_idx']
-        return SpectrumEnergyGroups.from_total_table(table) 
-    
-    def test_str(self, obs):
-        groups = self.get_groups(obs)
-        out = str(groups)
-        assert 'Number of groups: 9' in out
-        assert 'Bin range: (0, 8)' in out
-        assert 'Energy range: EnergyRange(min=1.0 TeV, max=10.0 TeV)' in out
-        
-    def test_find_list_idx(self, obs):
-        groups = self.get_groups(obs)
+
+    def test_str(self, groups):
+        txt = str(groups)
+        assert 'Number of groups: 9' in txt
+        assert 'Bin range: (0, 8)' in txt
+        assert 'Energy range: EnergyRange(min=1.0 TeV, max=10.0 TeV)' in txt
+
+    def test_find_list_idx(self, groups):
         bin_idx_1TeV = groups.find_list_idx(energy=1 * u.TeV)
         bin_idx_5_9TeV = groups.find_list_idx(energy=5.9 * u.TeV)
         bin_idx_10TeV = groups.find_list_idx(energy=10 * u.TeV)
@@ -96,8 +94,7 @@ class TestSpectrumEnergyGroups:
         assert_equal(bin_idx_5_9TeV, 4)
         assert_equal(bin_idx_10TeV, 8)
 
-    def test_make_and_replace_merged_group(self, obs):        
-        groups = self.get_groups(obs)
+    def test_make_and_replace_merged_group(self, groups):
         # Merge first 4 bins
         groups.make_and_replace_merged_group(0, 3, 'underflow')
         assert_equal(groups[0].bin_type, 'underflow')
@@ -109,7 +106,7 @@ class TestSpectrumEnergyGroups:
         groups.make_and_replace_merged_group(1, 1, 'normal')
         assert_equal(groups[1].bin_type, 'normal')
         assert_equal(groups[1].energy_group_idx, 1)
-        
+
         # Merge last 4 bins
         groups.make_and_replace_merged_group(2, 5, 'overflow')
         assert_equal(groups[2].bin_type, 'overflow')
@@ -118,8 +115,7 @@ class TestSpectrumEnergyGroups:
         assert_equal(groups[2].energy_group_idx, 2)
         assert_equal(len(groups), 3)
 
-    def test_flag_and_merge_out_of_range(self, obs):
-        groups = self.get_groups(obs)
+    def test_flag_and_merge_out_of_range(self, groups):
         ebounds = [2, 5, 7] * u.TeV
         groups.flag_and_merge_out_of_range(ebounds)
 
@@ -127,24 +123,55 @@ class TestSpectrumEnergyGroups:
         assert_equal(t['bin_type'], ['underflow', 'normal', 'normal', 'normal',
                                      'normal', 'normal', 'overflow', 'overflow', 'overflow'])
         assert_equal(t['energy_group_idx'], [0, 1, 2, 3, 4, 5, 6, 6, 6])
-        
-    def test_apply_energy_binning(self, obs):
-        groups = self.get_groups(obs)
+
+    def test_apply_energy_binning(self, groups):
         ebounds = [2, 5, 7] * u.TeV
         groups.apply_energy_binning(ebounds)
-        
+
         t = groups.to_total_table()
         assert_equal(t['energy_group_idx'], [0, 1, 1, 1, 2, 2, 3, 4, 5])
-        assert_equal(t['bin_idx'], [0, 1, 2, 3, 4, 5, 6, 7 ,8])
+        assert_equal(t['bin_idx'], [0, 1, 2, 3, 4, 5, 6, 7, 8])
         assert_equal(t['bin_type'], ['normal', 'normal', 'normal', 'normal',
-                                     'normal', 'normal', 'normal', 'normal', 'normal'])       
-        
+                                     'normal', 'normal', 'normal', 'normal', 'normal'])
 
-@requires_data('gammapy-extra')
-@requires_dependency('scipy')
-def test_flux_points_binning():
-    obs = SpectrumObservation.read('$GAMMAPY_EXTRA/datasets/hess-crab4_pha/pha_obs23523.fits')
-    energy_binning = calculate_flux_point_binning(obs_list=[obs], min_signif=3)
-    assert_quantity_allclose(energy_binning[5], 2.448 * u.TeV, rtol=1e-3)
 
-    
+class TestSpectrumEnergyGroup:
+
+    def test_init(self):
+        g = SpectrumEnergyGroup()
+        assert False
+
+
+class TestSpectrumEnergyBin:
+
+    def setup_class(self):
+        self.b = SpectrumEnergyBin(idx=0, energy_min=3 * u.TeV, energy_max=10 * u.TeV)
+
+    def test_str(self):
+        assert str(self.b) == 'SpectrumEnergyBin(idx=0, energy_min=3.0 TeV, energy_max=10.0 TeV)'
+
+    def test_contains(self):
+        # Contains is left inclusive, right exclusive
+        assert 2.9 * u.TeV not in self.b
+        assert 3 * u.TeV in self.b
+        assert 9.9 * u.TeV in self.b
+        assert 10 * u.TeV not in self.b
+
+    def test_energy_width(self):
+        e = self.b.energy_width
+        assert_allclose(e.value, 7)
+        assert e.unit == 'TeV'
+
+    def test_energy_log10_width(self):
+        actual = self.b.energy_log10_width
+        assert_allclose(actual, 0.5228787452803376)
+
+    def test_energy_log_center(self):
+        actual = self.b.energy_log_center
+        assert_allclose(actual.value, 5.477225575051661)
+        assert actual.unit == 'TeV'
+
+    def test_list_from_energy_bounds(self):
+        energy_bounds = [0.3, 1, 3, 10] * u.TeV
+        b = SpectrumEnergyBin.list_from_energy_bounds(energy_bounds)
+        assert len(b) == 3
