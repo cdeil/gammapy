@@ -23,14 +23,13 @@ import logging
 import numpy as np
 from astropy.units import Quantity
 from astropy.table import Table
+from ..utils.binning import Binning
 from ..utils.fits import table_from_row_data
 from ..data import ObservationStats
 
 __all__ = [
     'SpectrumEnergyGroupMaker',
     'SpectrumEnergyGroups',
-    'SpectrumEnergyGroup',
-    'SpectrumEnergyBin',
 ]
 
 log = logging.getLogger(__name__)
@@ -41,15 +40,14 @@ class SpectrumEnergyGroupMaker(object):
         self.obs = obs
 
     def compute_groups_fixed(self, ebounds):
-        from gammapy.utils.binning import Binning
         # Start with one bin per group, taken from the spectrum
-        ebounds_counts = self.obs.on_vector.energy
-        binning = Binning.from_bounds(ebounds_counts.value)
+        counts_ebounds = self.obs.on_vector.energy
+        counts_binning = Binning.from_bounds(counts_ebounds.value)
 
-        ebounds_target = ebounds.to(ebounds_counts.unit)
-        binning.regroup(ebounds_target)
+        target_ebounds = ebounds.to(counts_ebounds.unit)
+        target_binning = Binning.from_bounds(target_ebounds.value)
 
-        return binning.groups
+        return counts_binning.regroup(target_binning)
 
 
 class _SpectrumEnergyGroupMaker(object):
@@ -200,16 +198,6 @@ class SpectrumEnergyGroups(object):
 
     A helper class used by the `gammapy.spectrum.SpectrumEnergyMaker`.
     """
-    def __init__(self, group_list):
-        self._group_list = group_list
-
-    def __str__(self):
-        ss = 'SpectrumEnergyGroups:\n'
-        ss += '\nInfo including underflow- and overflow bins:\n'
-        ss += 'Number of groups: {}\n'.format(len(self))
-        ss += 'Bin range: {}\n'.format(self.bin_idx_range)
-        ss += 'Energy range: {}\n'.format(self.energy_range)
-        return ss
 
     @classmethod
     def from_obs(cls, obs):
@@ -220,37 +208,6 @@ class SpectrumEnergyGroups(object):
         table['bin_idx'] = np.arange(len(table))
         table['energy_group_idx'] = table['bin_idx']
         return cls.from_total_table(table)
-
-    @classmethod
-    def from_total_table(cls, table):
-        """Create list of SpectrumEnergyGroup objects from table."""
-        groups = []
-
-        for energy_group_idx in np.unique(table['energy_group_idx']):
-            mask = table['energy_group_idx'] == energy_group_idx
-            group_table = table[mask]
-            bin_idx_min = group_table['bin_idx'][0]
-            bin_idx_max = group_table['bin_idx'][-1]
-            if energy_group_idx == UNDERFLOW_BIN_INDEX:
-                bin_type = 'underflow'
-            elif energy_group_idx == OVERFLOW_BIN_INDEX:
-                bin_type = 'overflow'
-            else:
-                bin_type = 'normal'
-            energy_min = group_table['energy_min'][0]
-            energy_max = group_table['energy_max'][-1]
-
-            group = SpectrumEnergyGroup(
-                energy_group_idx=energy_group_idx,
-                bin_idx_min=bin_idx_min,
-                bin_idx_max=bin_idx_max,
-                bin_type=bin_type,
-                energy_min=energy_min,
-                energy_max=energy_max,
-            )
-            groups.append(group)
-
-        return cls(groups)
 
     @classmethod
     def from_groups_table(cls, table):
@@ -375,7 +332,7 @@ class SpectrumEnergyGroups(object):
         energy binning, u/o bins are merged
         """
         for idx in range(len(ebounds) - 1):
-            energy_range = ebounds[idx:idx+2]
+            energy_range = ebounds[idx:idx + 2]
             list_idx_min, list_idx_max = self.find_list_idx_range(energy_range)
 
             # Be sure to leave underflow and overflow bins alone
@@ -460,159 +417,3 @@ class SpectrumEnergyGroups(object):
             list_idx_max=idx_o[-1],
             bin_type='overflow',
         )
-
-
-class SpectrumEnergyGroup(object):
-    """Spectrum energy group.
-
-    Represents a consecutive range of bin indices (both ends inclusive).
-    """
-    valid_bin_types = ['normal', 'underflow', 'overflow']
-    """Valid values for ``bin_types`` attribute."""
-
-    def __init__(self, energy_group_idx, bin_idx_min, bin_idx_max, bin_type,
-                 energy_min, energy_max):
-        self.energy_group_idx = energy_group_idx
-        self.bin_idx_min = bin_idx_min
-        self.bin_idx_max = bin_idx_max
-        if bin_type not in self.valid_bin_types:
-            raise ValueError('Invalid bin type: {}'.format(bin_type))
-        self.bin_type = bin_type
-        self.energy_min = energy_min
-        self.energy_max = energy_max
-
-    def __str__(self):
-        return str(self.to_dict())
-
-    def __contains__(self, energy):
-        if (self.energy_min <= energy) and (energy < self.energy_max):
-            return True
-        else:
-            return False
-
-    def to_dict(self):
-        """Convert to `~collections.OrderedDict`."""
-        return OrderedDict([
-            ('energy_group_idx', self.energy_group_idx),
-            ('bin_idx_min', self.bin_idx_min),
-            ('bin_idx_max', self.bin_idx_max),
-            ('bin_type', self.bin_type),
-            ('energy_min', self.energy_min),
-            ('energy_max', self.energy_max),
-        ])
-
-
-    @property
-    def bin_idx_range(self):
-        """Range of bin indices (both sides inclusive)."""
-        return self.bin_idx_min, self.bin_idx_max
-
-    @property
-    def bin_idx_list(self):
-        """List of bin indices in the group."""
-        left, right = self.bin_idx_range
-        return list(range(left, right + 1))
-
-    # @property
-    # def energy_range(self):
-    #     """Energy range."""
-    #     return EnergyRange(min=self.energy_min, max=self.energy_max)
-
-
-class SpectrumEnergyBin(object):
-    """Spectrum energy bin.
-
-    Parameters
-    ----------
-    idx : int
-        Bin index
-    energy_min, energy_max : `~astropy.units.Quantity`
-        Energy min and max
-
-    Examples
-    --------
-    Create a single ``SpectrumEnergyBin``:
-
-    >>> from astropy import units as u
-    >>> from gammapy.spectrum import SpectrumEnergyBin
-    >>> SpectrumEnergyBin(idx=0, energy_min=3*u.TeV, energy_max=10*u.TeV)
-
-    Create a list of ``SpectrumEnergyBin`` from an array of energy bounds:
-
-    >>> import astropy.units as u
-    >>> from gammapy.spectrum import SpectrumEnergyBin
-    >>> energy_bounds = [0.3, 1, 3, 10] * u.TeV
-    >>> SpectrumEnergyBin.list_from_energy_bounds(energy_bounds)
-    [SpectrumEnergyBin(idx=0, energy_min=0.3 TeV, energy_max=1.0 TeV),
-     SpectrumEnergyBin(idx=1, energy_min=1.0 TeV, energy_max=3.0 TeV),
-     SpectrumEnergyBin(idx=2, energy_min=3.0 TeV, energy_max=10.0 TeV)]
-    """
-
-    def __init__(self, idx, energy_min, energy_max):
-        self.idx = idx
-        self.energy_min = energy_min
-        self.energy_max = energy_max
-
-    def __repr__(self):
-        fmt = '{}(idx={idx}, energy_min={energy_min}, energy_max={energy_max})'
-        return fmt.format(self.__class__.__name__, idx=self.idx,
-                          energy_min=self.energy_min, energy_max=self.energy_max)
-
-    def __contains__(self, energy):
-        """Does the bin contain a given energy?
-
-        We use the common convention: left inclusive, right exclusive.
-        """
-        if (self.energy_min <= energy) and (energy < self.energy_max):
-            return True
-        else:
-            return False
-
-    @property
-    def energy_width(self):
-        """Energy bin width (`~astropy.units.Quantity`)."""
-        return self.energy_max - self.energy_min
-
-    @property
-    def energy_log10_width(self):
-        """Energy bin log10 width (`~astropy.units.Quantity`).
-
-        This is sometimes called "dex".
-        """
-        energy_max = self.energy_max.to(self.energy_min.unit).value
-        energy_min = self.energy_min.value
-        return np.log10(energy_max / energy_min)
-
-    @property
-    def energy_log_center(self):
-        """Log center (`~astropy.units.Quantity`)."""
-        return np.sqrt(self.energy_min * self.energy_max).to(self.energy_min.unit)
-
-    @classmethod
-    def list_from_energy_bounds(cls, energy_bounds):
-        """Create list of ``SpectrumEnergyBin`` from array of energy bounds.
-
-        Parameters
-        ----------
-        energy_bounds : `~astropy.units.Quantity`
-            Energy bounds array
-
-        Returns
-        -------
-        energy_bins : list of SpectrumEnergyBin
-            Energy bins
-        """
-        energy_bins = []
-        for idx in range(len(energy_bounds) - 1):
-            energy_bins.append(cls(
-                idx=idx,
-                energy_min=energy_bounds[idx],
-                energy_max=energy_bounds[idx + 1],
-            ))
-        return energy_bins
-
-
-def _energy_range_to_min_max(energy_range):
-    """Convert length 2 energy quantity to min / max."""
-    # TODO: add validation with good error message
-    return energy_range[0], energy_range[1]

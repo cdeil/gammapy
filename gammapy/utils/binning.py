@@ -7,6 +7,9 @@ and optionally belongs to a given group.
 
 At the moment, this is used for energy binning.
 In the future we will probably also use this for time binning.
+
+This is similar to
+https://root.cern.ch/doc/master/classTAxis.html
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 from collections import OrderedDict
@@ -14,7 +17,9 @@ import numpy as np
 from astropy.table import Table
 
 __all__ = [
-    'Binning'
+    'Bin',
+    'BinGroup',
+    'Binning',
 ]
 
 
@@ -25,6 +30,8 @@ class Bin(object):
     """
     UNDERFLOW_BIN_INDEX = -1
     OVERFLOW_BIN_INDEX = -2
+
+    _fields = ['bin_idx', 'group_idx', 'min', 'max']
 
     def __init__(self, bin_idx=None, group_idx=None,
                  min=None, max=None):
@@ -67,6 +74,8 @@ class BinGroup(Bin):
     Contains info from a row in the groups table.
     """
 
+    _fields = ['group_idx', 'bin_idx_min', 'bin_idx_max', 'min', 'max']
+
     def __init__(self, group_idx=None,
                  bin_idx_min=None, bin_idx_max=None,
                  min=None, max=None):
@@ -104,24 +113,59 @@ class BinGroup(Bin):
 
 
 class Binning(object):
-    """Binning table.
+    """Axis binning and container and computations.
 
-    Internally data is stored in ``bin_table``, but
+    This class can represent and do some computations with
+    axis binnings that are ordered and consecutive, e.g.
 
-    Note that only ordered consecutive binnings are supported.
-    TODO: add checks and error handling.
+    * Bin 0 from 10 to 11
+    * Bin 1 from 11 to 15
+
+    Usually such binnings are created from bounds arrays::
+
+    >>> from gammapy.utils.binning import Binning
+    >>> binning = Binning.from_bounds([10, 11, 15])
+
+    The binning is stored in a `~astropy.table.Table` called
+    ``bin_table`` with columns:
+
+    * ``bin_idx`` - Bin index
+    * ``group_idx`` - Bin group index
+    * ``min`` - Bin left edge
+    * ``max`` - Bin right edge
+
+    This is mostly done for convenience, `~astropy.table.Table`
+    is a nice way to store a few Numpy array with the same length.
 
     Parameters
     ----------
     bin_table : `~astropy.table.Table`
         Table with binning info
+
+    Examples
+    --------
+    todo
     """
 
     def __init__(self, bin_table):
         self.bin_table = bin_table
 
+    def __repr__(self):
+        return '{}(n_bins={}, n_groups={})'.format(
+            self.__class__.__name__,
+            len(self.bin_table),
+            len(self.groups_table),
+        )
+
     @classmethod
     def from_bounds(cls, bounds, group_idx=None):
+        """Create `Binning` from array of bounds.
+
+        Parameters
+        ----------
+        bounds : array_like
+            List or array of bin bounds
+        """
         bin_table = Table()
         bin_table['bin_idx'] = np.arange(len(bounds) - 1)
         bin_table['min'] = bounds[:-1]
@@ -131,15 +175,56 @@ class Binning(object):
         bin_table['group_idx'] = group_idx
         return cls(bin_table)
 
+    @classmethod
+    def from_bin_list(cls, bins):
+        """Create `Binning` from list of `Bin` objects."""
+        rows = [bin.to_dict() for bin in bins]
+        return Table(rows=rows, names=Bin._fields)
+
+    def bin(self, row_idx):
+        """Get `Bin` for a given bin index."""
+        return Bin({colname: self.bin_table[row_idx][colname]
+                    for colname in self.bin_table.colnames})
+
+    @property
+    def bin_list(self):
+        """Get Python list of `Bin` for all bins."""
+        return [self.get_bin(row_idx) for row_idx in range(len(self.bin_table))]
+
+    @classmethod
+    def from_groups_table(cls, groups_table):
+        """Create `Binning` from a groups `~astropy.table.Table`."""
+        bins = []
+        for row in groups_table:
+            group = BinGroup.from_row(row)
+            bins.extend(group.to_bin_list())
+        return cls.from_bin_list(bins)
+
     @property
     def groups_table(self):
-        """Table with one row per group (`~astropy.table.Table`)"""
+        """Convert to groups table (`~astropy.table.Table`)."""
         rows = []
         for group_idx in np.unique(self.bin_table['group_idx']):
             rows.append(self.group_dict(group_idx))
 
-        names = ['group_idx', 'bin_idx_min', 'bin_idx_max', 'min', 'max']
-        return Table(rows=rows, names=names)
+        return Table(rows=rows, names=BinGroup._fields)
 
-    def find_bin(self, value):
+    # @property
+    # def bin_bounds_array(self):
+    #     return np.array(list(self.bin_table['min']).append(self.bin_table['max'][-1]))
+
+    def regroup(self, other_binning):
+        """Re-group this binning to some other given binning."""
+        bin_table = self.bin_table.copy()
+        for row in bin_table:
+            group_idx = other_binning.find_bin_idx(row['min'])
+            bin_table['group_idx'][row.index] = group_idx
+        return self.__class__(bin_table)
+
+    def find_bin_idx(self, value):
         """Find bin that contains a given value."""
+        for bin in self.bin_list():
+            if value in bin:
+                return bin.bin_idx
+
+        raise IndexError()

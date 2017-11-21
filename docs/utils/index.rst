@@ -215,6 +215,10 @@ Reference/API
     :no-inheritance-diagram:
     :include-all-objects:
 
+.. automodapi:: gammapy.utils.binning
+    :no-inheritance-diagram:
+    :include-all-objects:
+
 .. automodapi:: gammapy.utils.time
     :no-inheritance-diagram:
     :include-all-objects:
