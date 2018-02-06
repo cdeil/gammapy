@@ -49,7 +49,8 @@ def test_docstring_examples():
     assert_allclose(actual, 5.8600864348078519)
 
 
-@pytest.mark.xfail
+print('monkey business')
+
 def test_sensitivity():
     """Test if the sensitivity function is the inverse of the significance function."""
     n_ons = np.arange(0.1, 10, 0.3)
