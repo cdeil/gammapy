@@ -45,6 +45,7 @@ def fit_iminuit(parameters, function, opts_minuit=None):
                     **opts_minuit)
 
     minuit.migrad()
+
     parameters.covariance = _get_covar(minuit)
 
     return parameters, minuit
@@ -68,7 +69,7 @@ class MinuitFunction(object):
     def fcn(self, *values):
         for value, parameter in zip(values, self.parameters.parameters):
             parameter.value = value
-        return self.function(self.parameters)
+        return self.function()
 
 
 def make_minuit_par_kwargs(parameters):

@@ -78,9 +78,8 @@ class MapFit(object):
             mu_on=self.npred
         )
 
-    def total_stat(self, parameters):
+    def total_stat(self):
         """Likelihood for a given set of model parameters"""
-        self.model.parameters = parameters
         self.compute_npred()
         self.compute_stat()
         return np.sum(self.stat, dtype=np.float64)
