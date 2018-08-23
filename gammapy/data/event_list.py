@@ -301,16 +301,16 @@ class EventListBase(object):
         >>> event_list = event_list.select_energy()
         """
         energy = self.energy
-        mask = (energy_band[0] <= energy)
-        mask &= (energy < energy_band[1])
+        mask = energy_band[0] <= energy
+        mask &= energy < energy_band[1]
         return self.select_row_subset(mask)
 
     def select_time(self, time_interval):
         """Select events in time interval.
         """
         time = self.time
-        mask = (time_interval[0] <= time)
-        mask &= (time < time_interval[1])
+        mask = time_interval[0] <= time
+        mask &= time < time_interval[1]
         return self.select_row_subset(mask)
 
     def select_sky_cone(self, center, radius):
@@ -361,6 +361,7 @@ class EventListBase(object):
         TODO: move `gammapy.catalog.select_sky_box` to gammapy.utils.
         """
         from ..catalog import select_sky_box
+
         selected = select_sky_box(self.table, lon_lim, lat_lim, frame)
         return self.__class__(selected)
 
@@ -417,7 +418,9 @@ class EventListBase(object):
             ebounds = EnergyBounds.equal_log_spacing(emin, emax, 100)
 
         spec = CountsSpectrum(energy_lo=ebounds[:-1], energy_hi=ebounds[1:])
-        spec.fill(self.energy)  # leaving spec.fill(self) was triggering an issue for the LAT event list
+        spec.fill(
+            self.energy
+        )  # leaving spec.fill(self) was triggering an issue for the LAT event list
         spec.plot(ax=ax, **kwargs)
         return ax
 
@@ -528,6 +531,7 @@ class EventListBase(object):
         in this case 30 bins ranging from 0 to (0.3 deg)^2.
         """
         import matplotlib.pyplot as plt
+
         ax = plt.gca() if ax is None else ax
 
         if center is None:
@@ -634,13 +638,14 @@ class EventList(EventListBase):
             Copy of event list with selection applied.
         """
         offset = self.offset
-        mask = (offset_band[0] <= offset)
-        mask &= (offset < offset_band[1])
+        mask = offset_band[0] <= offset
+        mask &= offset < offset_band[1]
         return self.select_row_subset(mask)
 
     def peek(self):
         """Summary plots."""
         import matplotlib.pyplot as plt
+
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 8))
         self.plot_image_radec(ax=axes[0])
         self.plot_time(ax=axes[1])
@@ -658,19 +663,30 @@ class EventList(EventListBase):
         ax = plt.gca() if ax is None else ax
 
         count_image, x_edges, y_edges = np.histogram2d(
-            self.table[:]['RA'], self.table[:]['DEC'], bins=number_bins)
+            self.table[:]['RA'], self.table[:]['DEC'], bins=number_bins
+        )
 
         ax.set_title('# Photons')
 
         ax.set_xlabel('RA')
         ax.set_ylabel('DEC')
 
-        ax.plot(self.pointing_radec.ra.value, self.pointing_radec.dec.value,
-                '+', ms=20, mew=3, color='white')
+        ax.plot(
+            self.pointing_radec.ra.value,
+            self.pointing_radec.dec.value,
+            '+',
+            ms=20,
+            mew=3,
+            color='white',
+        )
 
-        im = ax.imshow(count_image, interpolation='nearest', origin='low',
-                       extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
-                       norm=PowerNorm(gamma=0.5))
+        im = ax.imshow(
+            count_image,
+            interpolation='nearest',
+            origin='low',
+            extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
+            norm=PowerNorm(gamma=0.5),
+        )
 
         ax.invert_xaxis()
         ax.grid()
@@ -683,6 +699,7 @@ class EventList(EventListBase):
         """Plot a counts image in field of view coordinates.
         """
         import matplotlib.pyplot as plt
+
         ax = plt.gca() if ax is None else ax
 
         max_x = max(self.table['DETX'])
@@ -694,16 +711,19 @@ class EventList(EventListBase):
         y_edges = np.linspace(min_y, max_y, number_bins)
 
         count_image, x_edges, y_edges = np.histogram2d(
-            self.table[:]['DETY'], self.table[:]['DETX'],
-            bins=(x_edges, y_edges)
+            self.table[:]['DETY'], self.table[:]['DETX'], bins=(x_edges, y_edges)
         )
 
         ax.set_title('# Photons')
 
         ax.set_xlabel('x / deg')
         ax.set_ylabel('y / deg')
-        ax.imshow(count_image, interpolation='nearest', origin='low',
-                  extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]])
+        ax.imshow(
+            count_image,
+            interpolation='nearest',
+            origin='low',
+            extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
+        )
 
 
 class EventListLAT(EventListBase):
@@ -733,9 +753,8 @@ class EventListLAT(EventListBase):
     def plot_image(self):
         """Quick look counts map sky plot."""
         from ..maps import WcsNDMap
-        m = WcsNDMap.create(
-            npix=(360, 180), binsz=1.0, proj='AIT', coordsys='GAL',
-        )
+
+        m = WcsNDMap.create(npix=(360, 180), binsz=1.0, proj='AIT', coordsys='GAL')
         coord = self.radec
         m.fill_by_coord(coord)
         m.plot(stretch='sqrt')
@@ -944,17 +963,12 @@ class EventListDatasetChecker(object):
     logger : `logging.Logger` or None
         Logger to use (use module-level Gammapy logger by default)
     """
+
     _AVAILABLE_CHECKS = OrderedDict(
-        misc='check_misc',
-        times='check_times',
-        coordinates='check_coordinates',
+        misc='check_misc', times='check_times', coordinates='check_coordinates'
     )
 
-    accuracy = OrderedDict(
-        angle=Angle('1 arcsec'),
-        time=Quantity(1, 'microsecond'),
-
-    )
+    accuracy = OrderedDict(angle=Angle('1 arcsec'), time=Quantity(1, 'microsecond'))
 
     def __init__(self, event_list_dataset, logger=None):
         self.dset = event_list_dataset
@@ -1038,20 +1052,21 @@ class EventListDatasetChecker(object):
         # http://fermi.gsfc.nasa.gov/ssc/data/analysis/documentation/Cicerone/Cicerone_Data/Time_in_ScienceTools.html
         # https://hess-confluence.desy.de/confluence/display/HESS/HESS+FITS+data+-+References+and+checks#HESSFITSdata-Referencesandchecks-Time
         telescope_met_refs = OrderedDict(
-            FERMI=Time('2001-01-01T00:00:00'),
-            HESS=Time('2001-01-01T00:00:00'),
+            FERMI=Time('2001-01-01T00:00:00'), HESS=Time('2001-01-01T00:00:00')
         )
 
         meta = self.dset.event_list.table.meta
         telescope = meta['TELESCOP']
 
         if telescope in telescope_met_refs.keys():
-            dt = (self.time_ref - telescope_met_refs[telescope])
+            dt = self.time_ref - telescope_met_refs[telescope]
             if dt > self.accuracy['time']:
                 ok = False
                 self.logger.error('MET reference is incorrect.')
         else:
-            self.logger.debug('Skipping MET reference check ... not known for this telescope.')
+            self.logger.debug(
+                'Skipping MET reference check ... not known for this telescope.'
+            )
 
         # TODO: check latest CTA spec to see which info is required / optional
         # EVENTS header keywords:
@@ -1109,8 +1124,10 @@ class EventListDatasetChecker(object):
             if colname not in event_list.table.colnames:
                 # GLON / GLAT columns are optional ...
                 # so it's OK if they are not present ... just move on ...
-                self.logger.info('Skipping Galactic coordinate check. '
-                                 'Missing column: "{}".'.format(colname))
+                self.logger.info(
+                    'Skipping Galactic coordinate check. '
+                    'Missing column: "{}".'.format(colname)
+                )
                 return True
 
         radec = event_list.radec
@@ -1126,8 +1143,10 @@ class EventListDatasetChecker(object):
             if colname not in event_list.table.colnames:
                 # AZ / ALT columns are optional ...
                 # so it's OK if they are not present ... just move on ...
-                self.logger.info('Skipping AltAz coordinate check. '
-                                 'Missing column: "{}".'.format(colname))
+                self.logger.info(
+                    'Skipping AltAz coordinate check. '
+                    'Missing column: "{}".'.format(colname)
+                )
                 return True
 
         radec = event_list.radec

@@ -13,11 +13,7 @@ from ..utils.fits import earth_location_from_dict
 from ..utils.table import table_row_to_dict
 from ..utils.time import time_ref_from_dict
 
-__all__ = [
-    'ObservationCTA',
-    'DataStoreObservation',
-    'ObservationList',
-]
+__all__ = ['ObservationCTA', 'DataStoreObservation', 'ObservationList']
 
 log = logging.getLogger(__name__)
 
@@ -75,9 +71,20 @@ class ObservationCTA(object):
 
     """
 
-    def __init__(self, obs_id=None, gti=None, events=None, aeff=None, edisp=None, psf=None, bkg=None,
-                 pointing_radec=None, observation_live_time_duration=None, observation_dead_time_fraction=None,
-                 meta=None):
+    def __init__(
+        self,
+        obs_id=None,
+        gti=None,
+        events=None,
+        aeff=None,
+        edisp=None,
+        psf=None,
+        bkg=None,
+        pointing_radec=None,
+        observation_live_time_duration=None,
+        observation_dead_time_fraction=None,
+        meta=None,
+    ):
         self.obs_id = obs_id
         self.gti = gti
         self.events = events
@@ -95,12 +102,17 @@ class ObservationCTA(object):
 
         ss += '- Pointing pos: RA {:.2f} / Dec {:.2f}\n'.format(
             self.pointing_radec.ra if self.pointing_radec else 'None',
-            self.pointing_radec.dec if self.pointing_radec else 'None')
+            self.pointing_radec.dec if self.pointing_radec else 'None',
+        )
 
         tstart = np.atleast_1d(self.gti.time_start.fits)[0] if self.gti else 'None'
         ss += '- Start time: {}\n'.format(tstart)
-        ss += '- Observation duration: {}\n'.format(self.gti.time_sum if self.gti else 'None')
-        ss += '- Dead-time fraction: {:5.3f} %\n'.format(100 * self.observation_dead_time_fraction)
+        ss += '- Observation duration: {}\n'.format(
+            self.gti.time_sum if self.gti else 'None'
+        )
+        ss += '- Dead-time fraction: {:5.3f} %\n'.format(
+            100 * self.observation_dead_time_fraction
+        )
 
         return ss
 
@@ -129,9 +141,13 @@ class DataStoreObservation(object):
     def __str__(self):
         ss = 'Info for OBS_ID = {}\n'.format(self.obs_id)
         ss += '- Start time: {:.2f}\n'.format(self.tstart.mjd)
-        ss += '- Pointing pos: RA {:.2f} / Dec {:.2f}\n'.format(self.pointing_radec.ra, self.pointing_radec.dec)
+        ss += '- Pointing pos: RA {:.2f} / Dec {:.2f}\n'.format(
+            self.pointing_radec.ra, self.pointing_radec.dec
+        )
         ss += '- Observation duration: {}\n'.format(self.observation_time_duration)
-        ss += '- Dead-time fraction: {:5.3f} %\n'.format(100 * self.observation_dead_time_fraction)
+        ss += '- Dead-time fraction: {:5.3f} %\n'.format(
+            100 * self.observation_dead_time_fraction
+        )
 
         # TODO: Which target was observed?
         # TODO: print info about available HDUs for this observation ...
@@ -153,9 +169,7 @@ class DataStoreObservation(object):
             HDU location
         """
         return self.data_store.hdu_table.hdu_location(
-            obs_id=self.obs_id,
-            hdu_type=hdu_type,
-            hdu_class=hdu_class,
+            obs_id=self.obs_id, hdu_type=hdu_type, hdu_class=hdu_class
         )
 
     def load(self, hdu_type=None, hdu_class=None):
@@ -330,15 +344,20 @@ class DataStoreObservation(object):
         if isinstance(self.psf, PSF3D):
             # PSF3D is a table PSF, so we use the native RAD binning by default
             # TODO: should handle this via a uniform caller API
-            psf_value = self.psf.to_energy_dependent_table_psf(theta=offset).evaluate(energy)
+            psf_value = self.psf.to_energy_dependent_table_psf(theta=offset).evaluate(
+                energy
+            )
         else:
-            psf_value = self.psf.to_energy_dependent_table_psf(theta=offset, rad=rad).evaluate(energy)
+            psf_value = self.psf.to_energy_dependent_table_psf(
+                theta=offset, rad=rad
+            ).evaluate(energy)
 
         arf = self.aeff.data.evaluate(offset=offset, energy=energy)
         exposure = arf * self.observation_live_time_duration
 
-        psf = EnergyDependentTablePSF(energy=energy, rad=rad,
-                                      exposure=exposure, psf_value=psf_value)
+        psf = EnergyDependentTablePSF(
+            energy=energy, rad=rad, exposure=exposure, psf_value=psf_value
+        )
         return psf
 
     def check_observation(self):
@@ -453,14 +472,19 @@ class ObservationList(UserList):
             psf_value += psf.psf_value.T * psf.exposure
 
         psf_value /= exposure
-        psf_tot = EnergyDependentTablePSF(energy=energy, rad=rad,
-                                          exposure=exposure,
-                                          psf_value=psf_value.T)
+        psf_tot = EnergyDependentTablePSF(
+            energy=energy, rad=rad, exposure=exposure, psf_value=psf_value.T
+        )
         return psf_tot
 
-    def make_mean_edisp(self, position, e_true, e_reco,
-                        low_reco_threshold=Energy(0.002, "TeV"),
-                        high_reco_threshold=Energy(150, "TeV")):
+    def make_mean_edisp(
+        self,
+        position,
+        e_true,
+        e_reco,
+        low_reco_threshold=Energy(0.002, "TeV"),
+        high_reco_threshold=Energy(150, "TeV"),
+    ):
         """Compute mean energy dispersion.
 
         Compute the mean edisp of a set of observations j at a given position
@@ -493,17 +517,19 @@ class ObservationList(UserList):
 
         for obs in self:
             offset = position.separation(obs.pointing_radec)
-            list_aeff.append(obs.aeff.to_effective_area_table(offset,
-                                                              energy=e_true))
-            list_edisp.append(obs.edisp.to_energy_dispersion(offset,
-                                                             e_reco=e_reco,
-                                                             e_true=e_true))
+            list_aeff.append(obs.aeff.to_effective_area_table(offset, energy=e_true))
+            list_edisp.append(
+                obs.edisp.to_energy_dispersion(offset, e_reco=e_reco, e_true=e_true)
+            )
             list_livetime.append(obs.observation_live_time_duration)
 
-        irf_stack = IRFStacker(list_aeff=list_aeff, list_edisp=list_edisp,
-                               list_livetime=list_livetime,
-                               list_low_threshold=list_low_threshold,
-                               list_high_threshold=list_high_threshold)
+        irf_stack = IRFStacker(
+            list_aeff=list_aeff,
+            list_edisp=list_edisp,
+            list_livetime=list_livetime,
+            list_low_threshold=list_low_threshold,
+            list_high_threshold=list_high_threshold,
+        )
         irf_stack.stack_edisp()
 
         return irf_stack.stacked_edisp

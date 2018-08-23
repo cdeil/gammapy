@@ -10,9 +10,7 @@ from astropy.utils import lazyproperty
 from ..utils.scripts import make_path
 from ..utils.time import time_relative_to_ref
 
-__all__ = [
-    'ObservationTable',
-]
+__all__ = ['ObservationTable']
 
 
 class ObservationTable(Table):
@@ -41,13 +39,15 @@ class ObservationTable(Table):
     @property
     def pointing_galactic(self):
         """Pointing positions as Galactic (`~astropy.coordinates.SkyCoord`)"""
-        return SkyCoord(self['GLON_PNT'], self['GLAT_PNT'], unit='deg', frame='galactic')
+        return SkyCoord(
+            self['GLON_PNT'], self['GLAT_PNT'], unit='deg', frame='galactic'
+        )
 
     @lazyproperty
     def _index_dict(self):
         """Dict containing row index for all obs ids"""
         # TODO: Switch to http://docs.astropy.org/en/latest/table/indexing.html once it is more stable
-        temp = (zip(self['OBS_ID'], np.arange(len(self))))
+        temp = zip(self['OBS_ID'], np.arange(len(self)))
         return dict(temp)
 
     def get_obs_idx(self, obs_id):
@@ -166,7 +166,7 @@ class ObservationTable(Table):
         mask = (value_range[0] <= value) & (value < value_range[1])
 
         if np.allclose(value_range[0].value, value_range[1].value):
-            mask = (value_range[0] == value)
+            mask = value_range[0] == value
 
         if inverted:
             mask = np.invert(mask)
@@ -319,8 +319,12 @@ class ObservationTable(Table):
             lat = selection['lat']
             radius = selection['radius'] + selection['border']
             return select_sky_circle(
-                self, lon_cen=lon, lat_cen=lat, radius=radius,
-                frame=selection['frame'], inverted=selection['inverted']
+                self,
+                lon_cen=lon,
+                lat_cen=lat,
+                radius=radius,
+                frame=selection['frame'],
+                inverted=selection['inverted'],
             )
 
         elif selection['type'] == 'sky_box':
@@ -330,8 +334,11 @@ class ObservationTable(Table):
             lon = Angle([lon[0] - border, lon[1] + border])
             lat = Angle([lat[0] - border, lat[1] + border])
             return select_sky_box(
-                self, lon_lim=lon, lat_lim=lat,
-                frame=selection['frame'], inverted=selection['inverted']
+                self,
+                lon_lim=lon,
+                lat_lim=lat,
+                frame=selection['frame'],
+                inverted=selection['inverted'],
             )
 
         elif selection['type'] == 'time_box':

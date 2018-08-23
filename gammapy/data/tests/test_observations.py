@@ -8,9 +8,17 @@ from astropy.units import Quantity
 import astropy.units as u
 from astropy.time import Time
 from ...data import DataStore, ObservationList, EventList, GTI, ObservationCTA
-from ...irf import EffectiveAreaTable2D, EnergyDispersion2D, EnergyDependentMultiGaussPSF
+from ...irf import (
+    EffectiveAreaTable2D,
+    EnergyDispersion2D,
+    EnergyDependentMultiGaussPSF,
+)
 from ...utils.testing import requires_data, requires_dependency
-from ...utils.testing import assert_quantity_allclose, assert_time_allclose, assert_skycoord_allclose
+from ...utils.testing import (
+    assert_quantity_allclose,
+    assert_time_allclose,
+    assert_skycoord_allclose,
+)
 from ...utils.energy import Energy
 from ...utils.energy import EnergyBounds
 
@@ -57,29 +65,58 @@ def test_data_store_observation_to_observation_cta(data_store):
 
 @requires_dependency('scipy')
 @requires_data('gammapy-extra')
-@pytest.mark.parametrize("pars,result", [
-    (dict(energy=None, rad=None),
-     dict(energy_shape=18, rad_shape=300, psf_energy=2.5178505859375 * u.TeV,
-          psf_rad=0.05 * u.deg,
-          psf_exposure=Quantity(6878545291473.34, "cm2 s"),
-          psf_value=Quantity(1837.4367332530592, "1/sr"))),
-    (dict(energy=EnergyBounds.equal_log_spacing(1, 10, 100, "TeV"), rad=None),
-     dict(energy_shape=101, rad_shape=300,
-          psf_energy=1.2589254117941673 * u.TeV, psf_rad=0.05 * u.deg,
-          psf_exposure=Quantity(4622187644084.735, "cm2 s"),
-          psf_value=Quantity(1682.8135627097995, "1/sr"))),
-    (dict(energy=None, rad=Angle(np.arange(0, 2, 0.002), 'deg')),
-     dict(energy_shape=18, rad_shape=1000,
-          psf_energy=2.5178505859375 * u.TeV, psf_rad=0.02 * u.deg,
-          psf_exposure=Quantity(6878545291473.34, "cm2 s"),
-          psf_value=Quantity(20455.914082287516, "1/sr"))),
-    (dict(energy=EnergyBounds.equal_log_spacing(1, 10, 100, "TeV"),
-          rad=Angle(np.arange(0, 2, 0.002), 'deg')),
-     dict(energy_shape=101, rad_shape=1000,
-          psf_energy=1.2589254117941673 * u.TeV, psf_rad=0.02 * u.deg,
-          psf_exposure=Quantity(4622187644084.735, "cm2 s"),
-          psf_value=Quantity(25016.103907407552, "1/sr"))),
-])
+@pytest.mark.parametrize(
+    "pars,result",
+    [
+        (
+            dict(energy=None, rad=None),
+            dict(
+                energy_shape=18,
+                rad_shape=300,
+                psf_energy=2.5178505859375 * u.TeV,
+                psf_rad=0.05 * u.deg,
+                psf_exposure=Quantity(6878545291473.34, "cm2 s"),
+                psf_value=Quantity(1837.4367332530592, "1/sr"),
+            ),
+        ),
+        (
+            dict(energy=EnergyBounds.equal_log_spacing(1, 10, 100, "TeV"), rad=None),
+            dict(
+                energy_shape=101,
+                rad_shape=300,
+                psf_energy=1.2589254117941673 * u.TeV,
+                psf_rad=0.05 * u.deg,
+                psf_exposure=Quantity(4622187644084.735, "cm2 s"),
+                psf_value=Quantity(1682.8135627097995, "1/sr"),
+            ),
+        ),
+        (
+            dict(energy=None, rad=Angle(np.arange(0, 2, 0.002), 'deg')),
+            dict(
+                energy_shape=18,
+                rad_shape=1000,
+                psf_energy=2.5178505859375 * u.TeV,
+                psf_rad=0.02 * u.deg,
+                psf_exposure=Quantity(6878545291473.34, "cm2 s"),
+                psf_value=Quantity(20455.914082287516, "1/sr"),
+            ),
+        ),
+        (
+            dict(
+                energy=EnergyBounds.equal_log_spacing(1, 10, 100, "TeV"),
+                rad=Angle(np.arange(0, 2, 0.002), 'deg'),
+            ),
+            dict(
+                energy_shape=101,
+                rad_shape=1000,
+                psf_energy=1.2589254117941673 * u.TeV,
+                psf_rad=0.02 * u.deg,
+                psf_exposure=Quantity(4622187644084.735, "cm2 s"),
+                psf_value=Quantity(25016.103907407552, "1/sr"),
+            ),
+        ),
+    ],
+)
 def test_make_psf(pars, result, data_store):
     position = SkyCoord(83.63, 22.01, unit='deg')
 
@@ -89,8 +126,7 @@ def test_make_psf(pars, result, data_store):
     assert_allclose(psf.rad.shape, result["rad_shape"])
     assert_allclose(psf.energy.shape, result["energy_shape"])
     assert_allclose(psf.exposure.shape, result["energy_shape"])
-    assert_allclose(psf.psf_value.shape, (result["energy_shape"],
-                                          result["rad_shape"]))
+    assert_allclose(psf.psf_value.shape, (result["energy_shape"], result["rad_shape"]))
 
     assert_quantity_allclose(psf.rad[10], result["psf_rad"])
     assert_quantity_allclose(psf.energy[10], result["psf_energy"])
@@ -118,9 +154,15 @@ def test_make_psftable():
 
     # Check that the mean PSF is consistent with the individual PSFs
     # (in this case the R68 of the mean PSF is in between the R68 of the individual PSFs)
-    assert_quantity_allclose(psf1_int.containment_radius(0.68), Angle(0.1050259592154517, 'deg'))
-    assert_quantity_allclose(psf2_int.containment_radius(0.68), Angle(0.09173224724288895, 'deg'))
-    assert_quantity_allclose(psf_tot_int.containment_radius(0.68), Angle(0.09838901174312292, 'deg'))
+    assert_quantity_allclose(
+        psf1_int.containment_radius(0.68), Angle(0.1050259592154517, 'deg')
+    )
+    assert_quantity_allclose(
+        psf2_int.containment_radius(0.68), Angle(0.09173224724288895, 'deg')
+    )
+    assert_quantity_allclose(
+        psf_tot_int.containment_radius(0.68), Angle(0.09838901174312292, 'deg')
+    )
 
 
 @requires_dependency('scipy')
@@ -134,17 +176,19 @@ def test_make_mean_edisp(data_store):
 
     e_true = EnergyBounds.equal_log_spacing(0.01, 150, 80, "TeV")
     e_reco = EnergyBounds.equal_log_spacing(0.5, 100, 15, "TeV")
-    rmf = obslist.make_mean_edisp(position=position, e_true=e_true,
-                                  e_reco=e_reco)
+    rmf = obslist.make_mean_edisp(position=position, e_true=e_true, e_reco=e_reco)
 
     assert len(rmf.e_true.nodes) == 80
     assert len(rmf.e_reco.nodes) == 15
     assert_quantity_allclose(rmf.data.data[53, 8], 0.056, atol=2e-2)
 
-    rmf2 = obslist.make_mean_edisp(position=position, e_true=e_true,
-                                   e_reco=e_reco,
-                                   low_reco_threshold=Energy(1, "TeV"),
-                                   high_reco_threshold=Energy(60, "TeV"))
+    rmf2 = obslist.make_mean_edisp(
+        position=position,
+        e_true=e_true,
+        e_reco=e_reco,
+        low_reco_threshold=Energy(1, "TeV"),
+        high_reco_threshold=Energy(60, "TeV"),
+    )
     i2 = np.where(rmf2.data.evaluate(e_reco=Energy(0.8, "TeV")) != 0)[0]
     assert len(i2) == 0
     i2 = np.where(rmf2.data.evaluate(e_reco=Energy(61, "TeV")) != 0)[0]

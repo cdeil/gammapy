@@ -15,7 +15,9 @@ from ...background import ReflectedRegionsBackgroundEstimator
 class TestObservationSummaryTable:
     @staticmethod
     def make_observation_summary_table():
-        data_store = DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/')
+        data_store = DataStore.from_dir(
+            '$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/'
+        )
         target_pos = SkyCoord(83.633083, 22.0145, unit='deg')
         return ObservationTableSummary(data_store.obs_table, target_pos)
 
@@ -50,7 +52,9 @@ class TestObservationSummary:
 
     @staticmethod
     def make_observation_summary():
-        datastore = DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/')
+        datastore = DataStore.from_dir(
+            '$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/'
+        )
         obs_ids = [23523, 23526]
 
         pos = SkyCoord(83.63 * u.deg, 22.01 * u.deg, frame='icrs')
@@ -61,8 +65,7 @@ class TestObservationSummary:
         for obs_id in obs_ids:
             obs = datastore.obs(obs_id)
             bkg = ReflectedRegionsBackgroundEstimator(
-                on_region=on_region,
-                obs_list=[obs],
+                on_region=on_region, obs_list=[obs]
             )
             bkg.run()
             bg_estimate = bkg.result[0]
@@ -81,6 +84,7 @@ class TestObservationSummary:
         # There's no test asserting on the result numbers yet!!!
         print(self.obs_summary)
         from pprint import pprint
+
         pprint(self.obs_summary.__dict__)
         assert 0
 

@@ -79,8 +79,7 @@ def view_as_blocks(arr_in, block_shape):
         raise ValueError("'block_shape' elements must be strictly positive")
 
     if block_shape.size != arr_in.ndim:
-        raise ValueError("'block_shape' must have the same length "
-                         "as 'arr_in.shape'")
+        raise ValueError("'block_shape' must have the same length " "as 'arr_in.shape'")
 
     arr_shape = np.array(arr_in.shape)
     if (arr_shape % block_shape).sum() != 0:
@@ -89,8 +88,12 @@ def view_as_blocks(arr_in, block_shape):
     # -- restride the array to build the block view
 
     if not arr_in.flags.contiguous:
-        warn(RuntimeWarning("Cannot provide views on a non-contiguous input "
-                            "array without copying."))
+        warn(
+            RuntimeWarning(
+                "Cannot provide views on a non-contiguous input "
+                "array without copying."
+            )
+        )
 
     arr_in = np.ascontiguousarray(arr_in)
 
@@ -150,23 +153,23 @@ def block_reduce(image, block_size, func=np.sum, cval=0):
     """
 
     if len(block_size) != image.ndim:
-        raise ValueError("`block_size` must have the same length "
-                         "as `image.shape`.")
+        raise ValueError("`block_size` must have the same length " "as `image.shape`.")
 
     pad_width = []
     for i in range(len(block_size)):
         if block_size[i] < 1:
-            raise ValueError("Down-sampling factors must be >= 1. Use "
-                             "`skimage.transform.resize` to up-sample an "
-                             "image.")
+            raise ValueError(
+                "Down-sampling factors must be >= 1. Use "
+                "`skimage.transform.resize` to up-sample an "
+                "image."
+            )
         if image.shape[i] % block_size[i] != 0:
             after_width = block_size[i] - (image.shape[i] % block_size[i])
         else:
             after_width = 0
         pad_width.append((0, after_width))
 
-    image = np.pad(image, pad_width=pad_width, mode='constant',
-                   constant_values=cval)
+    image = np.pad(image, pad_width=pad_width, mode='constant', constant_values=cval)
 
     out = view_as_blocks(image, block_size)
 

@@ -11,9 +11,7 @@ from .obs_table import ObservationTable
 from .hdu_index_table import HDUIndexTable
 from .observations import DataStoreObservation, ObservationList
 
-__all__ = [
-    'DataStore',
-]
+__all__ = ['DataStore']
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +42,7 @@ class DataStore(object):
     >>> data_store = DataStore.from_dir(dir)
     >>> data_store.info()
     """
+
     DEFAULT_HDU_TABLE = 'hdu-index.fits.gz'
     """Default HDU table filename."""
 
@@ -63,7 +62,9 @@ class DataStore(object):
             self.name = self.DEFAULT_NAME
 
     @classmethod
-    def from_files(cls, base_dir, hdu_table_filename=None, obs_table_filename=None, name=None):
+    def from_files(
+        cls, base_dir, hdu_table_filename=None, obs_table_filename=None, name=None
+    ):
         """Construct from HDU and observation index table files."""
         if hdu_table_filename:
             log.debug('Reading {}'.format(hdu_table_filename))
@@ -79,11 +80,7 @@ class DataStore(object):
         else:
             obs_table = None
 
-        return cls(
-            hdu_table=hdu_table,
-            obs_table=obs_table,
-            name=name,
-        )
+        return cls(hdu_table=hdu_table, obs_table=obs_table, name=name)
 
     @classmethod
     def from_dir(cls, base_dir, name=None):
@@ -164,10 +161,7 @@ class DataStore(object):
         obs : `~gammapy.data.DataStoreObservation`
             Observation container
         """
-        return DataStoreObservation(
-            obs_id=obs_id,
-            data_store=self,
-        )
+        return DataStoreObservation(obs_id=obs_id, data_store=self)
 
     def obs_list(self, obs_id, skip_missing=False):
         """Generate a `~gammapy.data.ObservationList`.
@@ -271,7 +265,11 @@ class DataStore(object):
         logger.info('Checking event list files')
         available = self.check_available_event_lists(logger)
         if np.any(~available):
-            logger.warning('Number of missing event list files: {}'.format(np.invert(available).sum()))
+            logger.warning(
+                'Number of missing event list files: {}'.format(
+                    np.invert(available).sum()
+                )
+            )
 
         # TODO: implement better, more complete integrity checks.
         return sane
@@ -303,7 +301,9 @@ class DataStore(object):
                 row = dict()
                 row['OBS_ID'] = observation['OBS_ID']
                 row['filetype'] = filetype
-                filename = self.filename(observation['OBS_ID'], filetype=filetype, abspath=True)
+                filename = self.filename(
+                    observation['OBS_ID'], filetype=filetype, abspath=True
+                )
                 row['filename'] = filename
                 data.append(row)
 
@@ -330,8 +330,10 @@ class DataStore(object):
             if not make_path(filename).is_file():
                 file_available[ii] = False
                 if logger:
-                    logger.warning('For OBS_ID = {:06d} the event list file is missing: {}'
-                                   ''.format(obs_id, filename))
+                    logger.warning(
+                        'For OBS_ID = {:06d} the event list file is missing: {}'
+                        ''.format(obs_id, filename)
+                    )
 
         return file_available
 
@@ -378,8 +380,12 @@ class DataStore(object):
             cmd += [str(loc.path()), str(targetdir)]
             subprocess.call(cmd)
 
-        subhdutable.write(str(outdir / self.DEFAULT_HDU_TABLE), format='fits', overwrite=overwrite)
-        subobstable.write(str(outdir / self.DEFAULT_OBS_TABLE), format='fits', overwrite=overwrite)
+        subhdutable.write(
+            str(outdir / self.DEFAULT_HDU_TABLE), format='fits', overwrite=overwrite
+        )
+        subobstable.write(
+            str(outdir / self.DEFAULT_OBS_TABLE), format='fits', overwrite=overwrite
+        )
 
     def data_summary(self, obs_id=None, summed=False):
         """Create a summary `~astropy.table.Table` with HDU size information.

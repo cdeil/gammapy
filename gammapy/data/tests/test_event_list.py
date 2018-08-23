@@ -70,7 +70,7 @@ class TestEventListDataset:
 
 @pytest.mark.xfail
 @requires_data('gammapy-extra')
-class TestEventListDatasetChecker():
+class TestEventListDatasetChecker:
     def test(self):
         filename = '$GAMMAPY_EXTRA/test_datasets/unbundled/hess/run_0023037_hard_eventlist.fits.gz'
         dset = EventListDataset.read(filename)

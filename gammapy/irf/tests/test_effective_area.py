@@ -49,9 +49,9 @@ class TestEffectiveAreaTable2D:
 
         energy = np.sqrt(e_axis[:-1] * e_axis[1:])
         area = aeff.data.evaluate(energy=energy, offset=offset)
-        effarea1d = EffectiveAreaTable(energy_lo=e_axis[:-1],
-                                       energy_hi=e_axis[1:],
-                                       data=area)
+        effarea1d = EffectiveAreaTable(
+            energy_lo=e_axis[:-1], energy_hi=e_axis[1:], data=area
+        )
 
         actual = effareafrom2d.data.evaluate(energy='2.34 TeV')
         desired = effarea1d.data.evaluate(energy='2.34 TeV')
@@ -65,7 +65,6 @@ class TestEffectiveAreaTable2D:
 
 
 class TestEffectiveAreaTable:
-
     @staticmethod
     @requires_dependency('scipy')
     @requires_dependency('matplotlib')
@@ -98,9 +97,9 @@ class TestEffectiveAreaTable:
         # Test evaluation outside safe range
         data = [np.nan, np.nan, 0, 0, 1, 2, 3, np.nan, np.nan]
         energy = np.logspace(0, 10, 10) * u.TeV
-        aeff = EffectiveAreaTable(data=data,
-                                  energy_lo=energy[:-1],
-                                  energy_hi=energy[1:])
+        aeff = EffectiveAreaTable(
+            data=data, energy_lo=energy[:-1], energy_hi=energy[1:]
+        )
         vals = aeff.evaluate_fill_nan()
         assert vals[1] == 0
         assert vals[-1] == 3
@@ -136,9 +135,13 @@ class TestEffectiveAreaTable:
         offset_hi = offset[1:]
         data = np.ones(shape=(len(energy_lo), len(offset_lo))) * u.cm * u.cm
 
-        aeff = EffectiveAreaTable2D(energy_lo=energy_lo, energy_hi=energy_hi,
-                                    offset_lo=offset_lo, offset_hi=offset_hi,
-                                    data=data)
+        aeff = EffectiveAreaTable2D(
+            energy_lo=energy_lo,
+            energy_hi=energy_hi,
+            offset_lo=offset_lo,
+            offset_hi=offset_hi,
+            data=data,
+        )
         hdu = aeff.to_fits()
         assert_equal(hdu.data['ENERG_LO'][0], aeff.data.axis('energy').lo.value)
         assert hdu.header['TUNIT1'] == aeff.data.axis('energy').lo.unit

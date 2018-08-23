@@ -43,8 +43,16 @@ class SpectrumFitResult(object):
         "obs",
     ]
 
-    def __init__(self, model, fit_range=None, statname=None, statval=None,
-                 stat_per_bin=None, npred=None, obs=None):
+    def __init__(
+        self,
+        model,
+        fit_range=None,
+        statname=None,
+        statval=None,
+        stat_per_bin=None,
+        npred=None,
+        obs=None,
+    ):
         self.model = model
         self.fit_range = fit_range
         self.statname = statname
@@ -307,15 +315,15 @@ class SpectrumResult(object):
         return residuals, residuals_err
 
     def plot(
-            self,
-            energy_range,
-            energy_unit="TeV",
-            flux_unit="cm-2 s-1 TeV-1",
-            energy_power=0,
-            fit_kwargs=dict(),
-            butterfly_kwargs=dict(),
-            point_kwargs=dict(),
-            fig_kwargs=dict(),
+        self,
+        energy_range,
+        energy_unit="TeV",
+        flux_unit="cm-2 s-1 TeV-1",
+        energy_power=0,
+        fit_kwargs=dict(),
+        butterfly_kwargs=dict(),
+        point_kwargs=dict(),
+        fig_kwargs=dict(),
     ):
         """Plot spectrum.
 

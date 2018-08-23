@@ -19,9 +19,18 @@ def test_datastore_hd_hap(data_store):
 
     assert str(type(obs.events)) == "<class 'gammapy.data.event_list.EventList'>"
     assert str(type(obs.gti)) == "<class 'gammapy.data.gti.GTI'>"
-    assert str(type(obs.aeff)) == "<class 'gammapy.irf.effective_area.EffectiveAreaTable2D'>"
-    assert str(type(obs.edisp)) == "<class 'gammapy.irf.energy_dispersion.EnergyDispersion2D'>"
-    assert str(type(obs.psf)) == "<class 'gammapy.irf.psf_gauss.EnergyDependentMultiGaussPSF'>"
+    assert (
+        str(type(obs.aeff))
+        == "<class 'gammapy.irf.effective_area.EffectiveAreaTable2D'>"
+    )
+    assert (
+        str(type(obs.edisp))
+        == "<class 'gammapy.irf.energy_dispersion.EnergyDispersion2D'>"
+    )
+    assert (
+        str(type(obs.psf))
+        == "<class 'gammapy.irf.psf_gauss.EnergyDependentMultiGaussPSF'>"
+    )
 
 
 @requires_dependency('scipy')
@@ -34,8 +43,14 @@ def test_datastore_pa():
     filename = str(obs.location(hdu_type='bkg').path(abs_path=False))
     assert filename == 'background/bgmodel_alt7_az0.fits.gz'
 
-    assert str(type(obs.aeff)) == "<class 'gammapy.irf.effective_area.EffectiveAreaTable2D'>"
-    assert str(type(obs.edisp)) == "<class 'gammapy.irf.energy_dispersion.EnergyDispersion2D'>"
+    assert (
+        str(type(obs.aeff))
+        == "<class 'gammapy.irf.effective_area.EffectiveAreaTable2D'>"
+    )
+    assert (
+        str(type(obs.edisp))
+        == "<class 'gammapy.irf.energy_dispersion.EnergyDispersion2D'>"
+    )
     assert str(type(obs.psf)) == "<class 'gammapy.irf.psf_king.PSFKing'>"
     assert str(type(obs.bkg)) == "<class 'gammapy.irf.background.Background3D'>"
 

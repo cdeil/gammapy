@@ -8,12 +8,7 @@ from ..utils.modeling import Parameters, Parameter
 from ..utils.scripts import make_path
 from ..maps import Map
 
-__all__ = [
-    'SkyModels',
-    'SkyModel',
-    'CompoundSkyModel',
-    'SkyDiffuseCube',
-]
+__all__ = ['SkyModels', 'SkyModel', 'CompoundSkyModel', 'SkyDiffuseCube']
 
 
 class SkyModels(object):
@@ -56,13 +51,14 @@ class SkyModels(object):
         idx = 0
         for skymodel in self.skymodels:
             n_par = len(skymodel.parameters.parameters)
-            skymodel.parameters.parameters = parameters.parameters[idx:idx + n_par]
+            skymodel.parameters.parameters = parameters.parameters[idx : idx + n_par]
             idx += n_par
 
     @classmethod
     def from_xml(cls, xml):
         """Read from XML string."""
         from ..utils.serialization import xml_to_sky_models
+
         return xml_to_sky_models(xml)
 
     @classmethod
@@ -86,6 +82,7 @@ class SkyModels(object):
     def to_xml(self, filename):
         """Write to XML file."""
         from ..utils.serialization import sky_models_to_xml
+
         xml = sky_models_to_xml(self)
         filename = make_path(filename)
         with filename.open('w') as output:
@@ -126,8 +123,7 @@ class SkyModel(object):
         self._spatial_model = spatial_model
         self._spectral_model = spectral_model
         self._parameters = Parameters(
-            spatial_model.parameters.parameters +
-            spectral_model.parameters.parameters
+            spatial_model.parameters.parameters + spectral_model.parameters.parameters
         )
 
     @property
@@ -154,8 +150,9 @@ class SkyModel(object):
 
     def __repr__(self):
         fmt = '{}(spatial_model={!r}, spectral_model={!r})'
-        return fmt.format(self.__class__.__name__,
-                          self.spatial_model, self.spectral_model)
+        return fmt.format(
+            self.__class__.__name__, self.spatial_model, self.spectral_model
+        )
 
     def __str__(self):
         ss = '{}\n\n'.format(self.__class__.__name__)
@@ -217,8 +214,7 @@ class CompoundSkyModel(object):
         self.model2 = model2
         self.operator = operator
         self._parameters = Parameters(
-            self.model1.parameters.parameters +
-            self.model2.parameters.parameters
+            self.model1.parameters.parameters + self.model2.parameters.parameters
         )
 
     @property
@@ -294,9 +290,7 @@ class SkyDiffuseCube(object):
 
         self.map = map
         self._interp_opts = {'fill_value': 0, 'interp': 'linear'}
-        self.parameters = Parameters([
-            Parameter('norm', norm),
-        ])
+        self.parameters = Parameters([Parameter('norm', norm)])
         self.meta = {} if meta is None else meta
 
     @classmethod

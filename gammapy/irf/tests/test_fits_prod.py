@@ -52,13 +52,17 @@ class FitsProductionTester:
 
     def test_edisp(self):
         edisp = self.obs.load(hdu_type='edisp', hdu_class='edisp_2d')
-        actual = edisp.data.evaluate(e_true=self.ref_energy, offset=self.ref_offset, migra=self.ref_migra)
+        actual = edisp.data.evaluate(
+            e_true=self.ref_energy, offset=self.ref_offset, migra=self.ref_migra
+        )
         desired = self.ref_dict['edisp_ref']
         assert_quantity_allclose(actual, desired)
 
     def test_psf(self):
         psf = self.obs.load(hdu_type='psf', hdu_class=self.ref_dict['psf_type'])
-        table_psf = psf.to_energy_dependent_table_psf(rad=self.ref_rad, theta=self.ref_offset)
+        table_psf = psf.to_energy_dependent_table_psf(
+            rad=self.ref_rad, theta=self.ref_offset
+        )
         actual = table_psf.evaluate(energy=self.ref_energy)
         desired = self.ref_dict['psf_ref']
         assert_quantity_allclose(actual[0][4], desired)

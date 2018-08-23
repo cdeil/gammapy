@@ -3,9 +3,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import astropy.units as u
 
-__all__ = [
-    'standardise_unit',
-]
+__all__ = ['standardise_unit']
 
 
 def standardise_unit(unit):
