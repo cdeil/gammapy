@@ -505,7 +505,7 @@ class Module_six_moves_urllib(types.ModuleType):
     robotparser = _importer._get_module("moves.urllib_robotparser")
 
     def __dir__(self):
-        return ['parse', 'error', 'request', 'response', 'robotparser']
+        return ["parse", "error", "request", "response", "robotparser"]
 
 
 _importer._add_module(
@@ -688,7 +688,7 @@ else:
     # Workaround for standalone backslash
 
     def u(s):
-        return unicode(s.replace(r'\\', r'\\\\'), "unicode_escape")
+        return unicode(s.replace(r"\\", r"\\\\"), "unicode_escape")
 
     unichr = unichr
     int2byte = chr
@@ -893,7 +893,7 @@ def with_metaclass(meta, *bases):
         def __prepare__(cls, name, this_bases):
             return meta.__prepare__(name, bases)
 
-    return type.__new__(metaclass, 'temporary_class', (), {})
+    return type.__new__(metaclass, "temporary_class", (), {})
 
 
 def add_metaclass(metaclass):
@@ -901,14 +901,14 @@ def add_metaclass(metaclass):
 
     def wrapper(cls):
         orig_vars = cls.__dict__.copy()
-        slots = orig_vars.get('__slots__')
+        slots = orig_vars.get("__slots__")
         if slots is not None:
             if isinstance(slots, str):
                 slots = [slots]
             for slots_var in slots:
                 orig_vars.pop(slots_var)
-        orig_vars.pop('__dict__', None)
-        orig_vars.pop('__weakref__', None)
+        orig_vars.pop("__dict__", None)
+        orig_vars.pop("__weakref__", None)
         return metaclass(cls.__name__, cls.__bases__, orig_vars)
 
     return wrapper
@@ -923,13 +923,13 @@ def python_2_unicode_compatible(klass):
     returning text and apply this decorator to the class.
     """
     if PY2:
-        if '__str__' not in klass.__dict__:
+        if "__str__" not in klass.__dict__:
             raise ValueError(
                 "@python_2_unicode_compatible cannot be applied "
                 "to %s because it doesn't define __str__()." % klass.__name__
             )
         klass.__unicode__ = klass.__str__
-        klass.__str__ = lambda self: self.__unicode__().encode('utf-8')
+        klass.__str__ = lambda self: self.__unicode__().encode("utf-8")
     return klass
 
 

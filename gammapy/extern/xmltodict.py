@@ -29,9 +29,9 @@ try:  # pragma no cover
 except NameError:  # pragma no cover
     _unicode = str
 
-__author__ = 'Martin Blech'
-__version__ = '0.9.0'
-__license__ = 'MIT'
+__author__ = "Martin Blech"
+__version__ = "0.9.0"
+__license__ = "MIT"
 
 
 class ParsingInterrupted(Exception):
@@ -44,14 +44,14 @@ class _DictSAXHandler(object):
         item_depth=0,
         item_callback=lambda *args: True,
         xml_attribs=True,
-        attr_prefix='@',
-        cdata_key='#text',
+        attr_prefix="@",
+        cdata_key="#text",
         force_cdata=False,
-        cdata_separator='',
+        cdata_separator="",
         postprocessor=None,
         dict_constructor=OrderedDict,
         strip_whitespace=True,
-        namespace_separator=':',
+        namespace_separator=":",
         namespaces=None,
     ):
         self.path = []
@@ -160,7 +160,7 @@ def parse(
     encoding=None,
     expat=expat,
     process_namespaces=False,
-    namespace_separator=':',
+    namespace_separator=":",
     **kwargs
 ):
     """Parse the given XML input and convert it into a dictionary.
@@ -233,7 +233,7 @@ def parse(
     handler = _DictSAXHandler(namespace_separator=namespace_separator, **kwargs)
     if isinstance(xml_input, _unicode):
         if not encoding:
-            encoding = 'utf-8'
+            encoding = "utf-8"
         xml_input = xml_input.encode(encoding)
     if not process_namespaces:
         namespace_separator = None
@@ -258,13 +258,13 @@ def _emit(
     key,
     value,
     content_handler,
-    attr_prefix='@',
-    cdata_key='#text',
+    attr_prefix="@",
+    cdata_key="#text",
     depth=0,
     preprocessor=None,
     pretty=False,
-    newl='\n',
-    indent='\t',
+    newl="\n",
+    indent="\t",
 ):
     if preprocessor is not None:
         result = preprocessor(key, value)
@@ -274,7 +274,7 @@ def _emit(
     if not isinstance(value, (list, tuple)):
         value = [value]
     if depth == 0 and len(value) > 1:
-        raise ValueError('document with multiple roots')
+        raise ValueError("document with multiple roots")
     for v in value:
         if v is None:
             v = OrderedDict()
@@ -320,7 +320,7 @@ def _emit(
             content_handler.ignorableWhitespace(newl)
 
 
-def unparse(input_dict, output=None, encoding='utf-8', full_document=True, **kwargs):
+def unparse(input_dict, output=None, encoding="utf-8", full_document=True, **kwargs):
     """Emit an XML document for the given `input_dict` (reverse of `parse`).
 
     The resulting XML document is returned as a string, but if `output` (a
@@ -355,7 +355,7 @@ def unparse(input_dict, output=None, encoding='utf-8', full_document=True, **kwa
         return value
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     import sys
     import marshal
 

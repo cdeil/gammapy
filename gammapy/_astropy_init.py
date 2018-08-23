@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-__all__ = ['__version__', '__githash__', 'test']
+__all__ = ["__version__", "__githash__", "test"]
 
 # this indicates whether or not we are in the package's setup.py
 try:
@@ -17,11 +17,11 @@ except NameError:
 try:
     from .version import version as __version__
 except ImportError:
-    __version__ = ''
+    __version__ = ""
 try:
     from .version import githash as __githash__
 except ImportError:
-    __githash__ = ''
+    __githash__ = ""
 
 
 # set up the test command
@@ -143,7 +143,7 @@ if not _ASTROPY_SETUP_:
     # add these here so we only need to cleanup the namespace at the end
     config_dir = None
 
-    if not os.environ.get('ASTROPY_SKIP_CONFIG_UPDATE', False):
+    if not os.environ.get("ASTROPY_SKIP_CONFIG_UPDATE", False):
         config_dir = os.path.dirname(__file__)
         config_template = os.path.join(config_dir, __package__ + ".cfg")
         if os.path.isfile(config_template):

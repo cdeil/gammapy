@@ -6,11 +6,11 @@ from astropy.units import Quantity
 from ....utils.testing import requires_dependency
 from ...source import PWN
 
-t = Quantity([0, 1, 10, 100, 1000, 10000, 100000], 'yr')
+t = Quantity([0, 1, 10, 100, 1000, 10000, 100000], "yr")
 pwn = PWN()
 
 
-@requires_dependency('scipy')
+@requires_dependency("scipy")
 def test_PWN_radius():
     """Test SNR luminosity"""
     reference = [
@@ -25,7 +25,7 @@ def test_PWN_radius():
     assert_allclose(pwn.radius(t).value, reference, rtol=1e-3)
 
 
-@requires_dependency('scipy')
+@requires_dependency("scipy")
 def test_magnetic_field():
     """Test SNR luminosity"""
     reference = [
@@ -37,4 +37,4 @@ def test_magnetic_field():
         4.68544888e-07,
         1.48162794e-06,
     ]
-    assert_allclose(pwn.magnetic_field(t).to('gauss').value, reference, rtol=1e-3)
+    assert_allclose(pwn.magnetic_field(t).to("gauss").value, reference, rtol=1e-3)

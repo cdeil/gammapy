@@ -23,30 +23,30 @@ from ...utils.energy import Energy
 from ...utils.energy import EnergyBounds
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def data_store():
-    return DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/')
+    return DataStore.from_dir("$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/")
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_data_store_observation(data_store):
     """Test DataStoreObservation class"""
     obs = data_store.obs(23523)
 
-    assert_time_allclose(obs.tstart, Time(51545.11740650318, scale='tt', format='mjd'))
-    assert_time_allclose(obs.tstop, Time(51545.11740672924, scale='tt', format='mjd'))
+    assert_time_allclose(obs.tstart, Time(51545.11740650318, scale="tt", format="mjd"))
+    assert_time_allclose(obs.tstop, Time(51545.11740672924, scale="tt", format="mjd"))
 
-    c = SkyCoord(83.63333129882812, 21.51444435119629, unit='deg')
+    c = SkyCoord(83.63333129882812, 21.51444435119629, unit="deg")
     assert_skycoord_allclose(obs.pointing_radec, c)
 
-    c = SkyCoord(26.533863067626953, 40.60616683959961, unit='deg')
+    c = SkyCoord(26.533863067626953, 40.60616683959961, unit="deg")
     assert_skycoord_allclose(obs.pointing_altaz, c)
 
-    c = SkyCoord(83.63333129882812, 22.01444435119629, unit='deg')
+    c = SkyCoord(83.63333129882812, 22.01444435119629, unit="deg")
     assert_skycoord_allclose(obs.target_radec, c)
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_data_store_observation_to_observation_cta(data_store):
     """Test the DataStoreObservation.to_observation_cta conversion method"""
     obs = data_store.obs(23523).to_observation_cta()
@@ -63,8 +63,8 @@ def test_data_store_observation_to_observation_cta(data_store):
     assert type(obs.observation_dead_time_fraction) == np.float64
 
 
-@requires_dependency('scipy')
-@requires_data('gammapy-extra')
+@requires_dependency("scipy")
+@requires_data("gammapy-extra")
 @pytest.mark.parametrize(
     "pars,result",
     [
@@ -91,7 +91,7 @@ def test_data_store_observation_to_observation_cta(data_store):
             ),
         ),
         (
-            dict(energy=None, rad=Angle(np.arange(0, 2, 0.002), 'deg')),
+            dict(energy=None, rad=Angle(np.arange(0, 2, 0.002), "deg")),
             dict(
                 energy_shape=18,
                 rad_shape=1000,
@@ -104,7 +104,7 @@ def test_data_store_observation_to_observation_cta(data_store):
         (
             dict(
                 energy=EnergyBounds.equal_log_spacing(1, 10, 100, "TeV"),
-                rad=Angle(np.arange(0, 2, 0.002), 'deg'),
+                rad=Angle(np.arange(0, 2, 0.002), "deg"),
             ),
             dict(
                 energy_shape=101,
@@ -118,7 +118,7 @@ def test_data_store_observation_to_observation_cta(data_store):
     ],
 )
 def test_make_psf(pars, result, data_store):
-    position = SkyCoord(83.63, 22.01, unit='deg')
+    position = SkyCoord(83.63, 22.01, unit="deg")
 
     obs1 = data_store.obs(23523)
     psf = obs1.make_psf(position=position, energy=pars["energy"], rad=pars["rad"])
@@ -134,11 +134,11 @@ def test_make_psf(pars, result, data_store):
     assert_quantity_allclose(psf.psf_value[10, 50], result["psf_value"])
 
 
-@requires_dependency('scipy')
-@requires_data('gammapy-extra')
+@requires_dependency("scipy")
+@requires_data("gammapy-extra")
 def test_make_psftable():
-    position = SkyCoord(83.63, 22.01, unit='deg')
-    data_store = DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2')
+    position = SkyCoord(83.63, 22.01, unit="deg")
+    data_store = DataStore.from_dir("$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2")
     obs1 = data_store.obs(23523)
     obs2 = data_store.obs(23526)
     energy = EnergyBounds.equal_log_spacing(1, 10, 100, "TeV")
@@ -155,20 +155,20 @@ def test_make_psftable():
     # Check that the mean PSF is consistent with the individual PSFs
     # (in this case the R68 of the mean PSF is in between the R68 of the individual PSFs)
     assert_quantity_allclose(
-        psf1_int.containment_radius(0.68), Angle(0.1050259592154517, 'deg')
+        psf1_int.containment_radius(0.68), Angle(0.1050259592154517, "deg")
     )
     assert_quantity_allclose(
-        psf2_int.containment_radius(0.68), Angle(0.09173224724288895, 'deg')
+        psf2_int.containment_radius(0.68), Angle(0.09173224724288895, "deg")
     )
     assert_quantity_allclose(
-        psf_tot_int.containment_radius(0.68), Angle(0.09838901174312292, 'deg')
+        psf_tot_int.containment_radius(0.68), Angle(0.09838901174312292, "deg")
     )
 
 
-@requires_dependency('scipy')
-@requires_data('gammapy-extra')
+@requires_dependency("scipy")
+@requires_data("gammapy-extra")
 def test_make_mean_edisp(data_store):
-    position = SkyCoord(83.63, 22.01, unit='deg')
+    position = SkyCoord(83.63, 22.01, unit="deg")
 
     obs1 = data_store.obs(23523)
     obs2 = data_store.obs(23592)

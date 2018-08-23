@@ -11,12 +11,12 @@ from numpy.testing import assert_allclose
 from ..datasets import gammapy_extra
 
 __all__ = [
-    'requires_dependency',
-    'requires_data',
-    'assert_quantity_allclose',
-    'assert_wcs_allclose',
-    'assert_skycoord_allclose',
-    'assert_time_allclose',
+    "requires_dependency",
+    "requires_data",
+    "assert_quantity_allclose",
+    "assert_wcs_allclose",
+    "assert_skycoord_allclose",
+    "assert_time_allclose",
 ]
 
 # Cache for `requires_dependency`
@@ -49,23 +49,23 @@ def requires_dependency(name):
 
         _requires_dependency_cache[name] = skip_it
 
-    reason = 'Missing dependency: {}'.format(name)
+    reason = "Missing dependency: {}".format(name)
     return pytest.mark.skipif(skip_it, reason=reason)
 
 
 def has_data(name):
     """Is a certain set of data available?
     """
-    if name == 'gammapy-extra':
+    if name == "gammapy-extra":
         from ..datasets import gammapy_extra
 
         return gammapy_extra.is_available
-    elif name == 'gamma-cat':
-        return 'GAMMA_CAT' in os.environ
-    elif name == 'fermi-lat':
-        return 'GAMMAPY_FERMI_LAT_DATA' in os.environ
+    elif name == "gamma-cat":
+        return "GAMMA_CAT" in os.environ
+    elif name == "fermi-lat":
+        return "GAMMAPY_FERMI_LAT_DATA" in os.environ
     else:
-        raise ValueError('Invalid name: {}'.format(name))
+        raise ValueError("Invalid name: {}".format(name))
 
 
 def requires_data(name):
@@ -86,7 +86,7 @@ def requires_data(name):
     """
     skip_it = not has_data(name)
 
-    reason = 'Missing data: {}'.format(name)
+    reason = "Missing data: {}".format(name)
     return pytest.mark.skipif(skip_it, reason=reason)
 
 
@@ -115,8 +115,8 @@ def run_cli(cli, args, exit_code=0):
     result = CliRunner().invoke(cli, args, catch_exceptions=False)
 
     if result.exit_code != exit_code:
-        sys.stderr.write('Exit code mismatch!\n')
-        sys.stderr.write('Ouput:\n')
+        sys.stderr.write("Exit code mismatch!\n")
+        sys.stderr.write("Ouput:\n")
         sys.stderr.write(result.output)
 
     return result
@@ -163,7 +163,7 @@ def mpl_savefig_check():
     import matplotlib.pyplot as plt
     from io import BytesIO
 
-    plt.savefig(BytesIO(), format='png')
+    plt.savefig(BytesIO(), format="png")
 
 
 def assert_quantity_allclose(actual, desired, rtol=1.e-7, atol=None, **kwargs):

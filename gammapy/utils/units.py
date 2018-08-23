@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import astropy.units as u
 
-__all__ = ['standardise_unit']
+__all__ = ["standardise_unit"]
 
 
 def standardise_unit(unit):
@@ -37,7 +37,7 @@ def standardise_unit(unit):
     unit = u.Unit(unit)
     bases, powers = [], []
     for base, power in zip(unit.bases, unit.powers):
-        if str(base) not in {'ph', 'ct'}:
+        if str(base) not in {"ph", "ct"}:
             bases.append(base)
             powers.append(power)
 

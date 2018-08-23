@@ -9,7 +9,7 @@ from .counts import fill_map_counts
 from .exposure import make_map_exposure_true_energy, _map_spectrum_weight
 from .background import make_map_background_irf
 
-__all__ = ['MapMaker', 'MapMakerObs']
+__all__ = ["MapMaker", "MapMakerObs"]
 
 log = logging.getLogger(__name__)
 
@@ -29,10 +29,10 @@ class MapMaker(object):
 
     def __init__(self, geom, offset_max, exclusion_mask=None):
         if not isinstance(geom, WcsGeom):
-            raise ValueError('MapMaker only works with WcsGeom')
+            raise ValueError("MapMaker only works with WcsGeom")
 
         if geom.is_image:
-            raise ValueError('MapMaker only works with geom with an energy axis')
+            raise ValueError("MapMaker only works with geom with an energy axis")
 
         self.geom = geom
         self.offset_max = Angle(offset_max)
@@ -40,7 +40,7 @@ class MapMaker(object):
 
         # Some background estimation methods need an exclusion mask.
         if exclusion_mask is not None:
-            self.maps['exclusion'] = exclusion_mask
+            self.maps["exclusion"] = exclusion_mask
 
     def run(self, obs_list, selection=None):
         """
@@ -64,7 +64,7 @@ class MapMaker(object):
 
         # Initialise zero-filled maps
         for name in selection:
-            unit = 'm2 s' if name == 'exposure' else ''
+            unit = "m2 s" if name == "exposure" else ""
             self.maps[name] = Map.from_geom(self.geom, unit=unit)
 
         for obs in ProgressBar(obs_list):
@@ -72,7 +72,7 @@ class MapMaker(object):
                 self._process_obs(obs, selection)
             except NoOverlapError:
                 log.info(
-                    'Skipping observation {}, not contained in map.'.format(obs.obs_id)
+                    "Skipping observation {}, not contained in map.".format(obs.obs_id)
                 )
                 continue
 
@@ -81,10 +81,10 @@ class MapMaker(object):
     def _process_obs(self, obs, selection):
         # Compute cutout geometry and slices to stack results back later
         cutout_map = Map.from_geom(self.geom).cutout(
-            position=obs.pointing_radec, width=2 * self.offset_max, mode='trim'
+            position=obs.pointing_radec, width=2 * self.offset_max, mode="trim"
         )
 
-        log.info('Processing observation {}'.format(obs.obs_id))
+        log.info("Processing observation {}".format(obs.obs_id))
 
         # Compute field of view mask on the cutout
         coords = cutout_map.geom.get_coord()
@@ -92,10 +92,10 @@ class MapMaker(object):
         fov_mask = offset >= self.offset_max
 
         # Only if there is an exclusion mask, make a cutout
-        exclusion_mask = self.maps.get('exclusion', None)
+        exclusion_mask = self.maps.get("exclusion", None)
         if exclusion_mask is not None:
             exclusion_mask = exclusion_mask.cutout(
-                position=obs.pointing_radec, width=2 * self.offset_max, mode='trim'
+                position=obs.pointing_radec, width=2 * self.offset_max, mode="trim"
             )
 
         # Make maps for this observation
@@ -130,7 +130,7 @@ class MapMaker(object):
         """
         images = {}
         for name, map in self.maps.items():
-            if name == 'exposure':
+            if name == "exposure":
                 map = _map_spectrum_weight(map, spectrum)
 
             images[name] = map.sum_over_axes()
@@ -175,7 +175,7 @@ class MapMakerObs(object):
         selection = _check_selection(selection)
 
         for name in selection:
-            getattr(self, '_make_' + name)()
+            getattr(self, "_make_" + name)()
 
         return self.maps
 
@@ -184,7 +184,7 @@ class MapMakerObs(object):
         fill_map_counts(counts, self.obs.events)
         if self.fov_mask is not None:
             counts.data[..., self.fov_mask] = 0
-        self.maps['counts'] = counts
+        self.maps["counts"] = counts
 
     def _make_exposure(self):
         exposure = make_map_exposure_true_energy(
@@ -195,7 +195,7 @@ class MapMakerObs(object):
         )
         if self.fov_mask is not None:
             exposure.data[..., self.fov_mask] = 0
-        self.maps['exposure'] = exposure
+        self.maps["exposure"] = exposure
 
     def _make_background(self):
         background = make_map_background_irf(
@@ -210,21 +210,21 @@ class MapMakerObs(object):
         # TODO: decide what background modeling options to support
         # Extra things like FOV norm scale or ring would go here.
 
-        self.maps['background'] = background
+        self.maps["background"] = background
 
 
 def _check_selection(selection):
     """Handle default and validation of selection"""
-    available = ['counts', 'exposure', 'background']
+    available = ["counts", "exposure", "background"]
 
     if selection is None:
         selection = available
 
     if not isinstance(selection, list):
-        raise TypeError('Selection must be a list of str')
+        raise TypeError("Selection must be a list of str")
 
     for name in selection:
         if name not in available:
-            raise ValueError('Selection not available: {!r}'.format(name))
+            raise ValueError("Selection not available: {!r}".format(name))
 
     return selection

@@ -6,13 +6,13 @@ from ...data import DataStore
 from ...utils.testing import requires_data, requires_dependency
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def data_store():
-    return DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/')
+    return DataStore.from_dir("$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/")
 
 
-@requires_dependency('scipy')
-@requires_data('gammapy-extra')
+@requires_dependency("scipy")
+@requires_data("gammapy-extra")
 def test_datastore_hd_hap(data_store):
     """Test HESS HAP-HD data access."""
     obs = data_store.obs(obs_id=23523)
@@ -33,15 +33,15 @@ def test_datastore_hd_hap(data_store):
     )
 
 
-@requires_dependency('scipy')
-@requires_data('gammapy-extra')
+@requires_dependency("scipy")
+@requires_data("gammapy-extra")
 def test_datastore_pa():
     """Test HESS ParisAnalysis data access."""
-    data_store = DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-pa')
+    data_store = DataStore.from_dir("$GAMMAPY_EXTRA/datasets/hess-crab4-pa")
 
     obs = data_store.obs(obs_id=23523)
-    filename = str(obs.location(hdu_type='bkg').path(abs_path=False))
-    assert filename == 'background/bgmodel_alt7_az0.fits.gz'
+    filename = str(obs.location(hdu_type="bkg").path(abs_path=False))
+    assert filename == "background/bgmodel_alt7_az0.fits.gz"
 
     assert (
         str(type(obs.aeff))
@@ -55,15 +55,15 @@ def test_datastore_pa():
     assert str(type(obs.bkg)) == "<class 'gammapy.irf.background.Background3D'>"
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_datastore_load_all(data_store):
     """Test loading data and IRF files via the DataStore"""
-    event_lists = data_store.load_all(hdu_class='events')
-    assert_allclose(event_lists[0].table['ENERGY'][0], 1.1156039)
-    assert_allclose(event_lists[-1].table['ENERGY'][0], 1.0204216)
+    event_lists = data_store.load_all(hdu_class="events")
+    assert_allclose(event_lists[0].table["ENERGY"][0], 1.1156039)
+    assert_allclose(event_lists[-1].table["ENERGY"][0], 1.0204216)
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_datastore_obslist(data_store):
     """Test loading data and IRF files via the DataStore"""
     obslist = data_store.obs_list([23523, 23592])
@@ -76,11 +76,11 @@ def test_datastore_obslist(data_store):
     assert obslist[0].obs_id == 23523
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_datastore_subset(tmpdir, data_store):
     """Test creating a datastore as subset of another datastore"""
     selected_obs = data_store.obs_table.select_obs_id([23523, 23592])
-    storedir = tmpdir / 'substore'
+    storedir = tmpdir / "substore"
     data_store.copy_obs(selected_obs, storedir)
     obs_id = [23523, 23592]
     data_store.copy_obs(obs_id, storedir, overwrite=True)
@@ -96,25 +96,25 @@ def test_datastore_subset(tmpdir, data_store):
     assert str(actual.events.table) == str(desired.events.table)
 
     # Copy only certain HDU classes
-    storedir = tmpdir / 'substore2'
-    data_store.copy_obs(obs_id, storedir, hdu_class=['events'])
+    storedir = tmpdir / "substore2"
+    data_store.copy_obs(obs_id, storedir, hdu_class=["events"])
 
     substore = DataStore.from_dir(storedir)
     assert len(substore.hdu_table) == 2
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_data_summary(data_store):
     """Test data summary function"""
     t = data_store.data_summary([23523, 23592])
-    assert t[0]['events'] == 620975
-    assert t[1]['edisp_2d'] == 28931
+    assert t[0]["events"] == 620975
+    assert t[1]["edisp_2d"] == 28931
 
     t = data_store.data_summary([23523, 23592], summed=True)
-    assert t[0]['psf_3gauss'] == 6042
+    assert t[0]["psf_3gauss"] == 6042
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 def test_check_observations(data_store):
     result = data_store.check_observations()
     assert len(result) == 0

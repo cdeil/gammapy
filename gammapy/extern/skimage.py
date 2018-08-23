@@ -72,7 +72,7 @@ def view_as_blocks(arr_in, block_shape):
              [82, 83]]]])
     """
     if not isinstance(block_shape, tuple):
-        raise TypeError('block needs to be a tuple')
+        raise TypeError("block needs to be a tuple")
 
     block_shape = np.array(block_shape)
     if (block_shape <= 0).any():
@@ -169,7 +169,7 @@ def block_reduce(image, block_size, func=np.sum, cval=0):
             after_width = 0
         pad_width.append((0, after_width))
 
-    image = np.pad(image, pad_width=pad_width, mode='constant', constant_values=cval)
+    image = np.pad(image, pad_width=pad_width, mode="constant", constant_values=cval)
 
     out = view_as_blocks(image, block_size)
 

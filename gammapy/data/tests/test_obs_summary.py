@@ -11,14 +11,14 @@ from ...utils.testing import requires_data, requires_dependency
 from ...background import ReflectedRegionsBackgroundEstimator
 
 
-@requires_data('gammapy-extra')
+@requires_data("gammapy-extra")
 class TestObservationSummaryTable:
     @staticmethod
     def make_observation_summary_table():
         data_store = DataStore.from_dir(
-            '$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/'
+            "$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/"
         )
-        target_pos = SkyCoord(83.633083, 22.0145, unit='deg')
+        target_pos = SkyCoord(83.633083, 22.0145, unit="deg")
         return ObservationTableSummary(data_store.obs_table, target_pos)
 
     @classmethod
@@ -27,24 +27,24 @@ class TestObservationSummaryTable:
 
     def test_str(self):
         text = str(self.table_summary)
-        assert 'Observation summary' in text
+        assert "Observation summary" in text
 
     def test_offset(self):
         offset = self.table_summary.offset
         assert_allclose(offset.degree.mean(), 1., rtol=1.e-2)
         assert_allclose(offset.degree.std(), 0.5, rtol=1.e-2)
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_zenith(self):
         self.table_summary.plot_zenith_distribution()
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_offset(self):
         self.table_summary.plot_offset_distribution()
 
 
-@requires_data('gammapy-extra')
-@requires_dependency('scipy')
+@requires_data("gammapy-extra")
+@requires_dependency("scipy")
 class TestObservationSummary:
     """
     Test observation summary.
@@ -53,11 +53,11 @@ class TestObservationSummary:
     @staticmethod
     def make_observation_summary():
         datastore = DataStore.from_dir(
-            '$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/'
+            "$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/"
         )
         obs_ids = [23523, 23526]
 
-        pos = SkyCoord(83.63 * u.deg, 22.01 * u.deg, frame='icrs')
+        pos = SkyCoord(83.63 * u.deg, 22.01 * u.deg, frame="icrs")
         on_size = 0.3 * u.deg
         on_region = CircleSkyRegion(pos, on_size)
 
@@ -90,24 +90,24 @@ class TestObservationSummary:
 
     def test_obs_str(self):
         text = str(self.obs_summary)
-        assert 'Observation summary' in text
+        assert "Observation summary" in text
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_significance(self):
         self.obs_summary.plot_significance_vs_livetime()
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_excess(self):
         self.obs_summary.plot_excess_vs_livetime()
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_background(self):
         self.obs_summary.plot_background_vs_livetime()
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_gamma_rate(self):
         self.obs_summary.plot_gamma_rate()
 
-    @requires_dependency('matplotlib')
+    @requires_dependency("matplotlib")
     def test_plot_background_rate(self):
         self.obs_summary.plot_background_rate()

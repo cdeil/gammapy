@@ -13,7 +13,7 @@ from ..utils.fits import earth_location_from_dict
 from ..utils.table import table_row_to_dict
 from ..utils.time import time_ref_from_dict
 
-__all__ = ['ObservationCTA', 'DataStoreObservation', 'ObservationList']
+__all__ = ["ObservationCTA", "DataStoreObservation", "ObservationList"]
 
 log = logging.getLogger(__name__)
 
@@ -98,19 +98,19 @@ class ObservationCTA(object):
         self.meta = meta or OrderedDict()
 
     def __str__(self):
-        ss = 'Info for OBS_ID = {}\n'.format(self.obs_id)
+        ss = "Info for OBS_ID = {}\n".format(self.obs_id)
 
-        ss += '- Pointing pos: RA {:.2f} / Dec {:.2f}\n'.format(
-            self.pointing_radec.ra if self.pointing_radec else 'None',
-            self.pointing_radec.dec if self.pointing_radec else 'None',
+        ss += "- Pointing pos: RA {:.2f} / Dec {:.2f}\n".format(
+            self.pointing_radec.ra if self.pointing_radec else "None",
+            self.pointing_radec.dec if self.pointing_radec else "None",
         )
 
-        tstart = np.atleast_1d(self.gti.time_start.fits)[0] if self.gti else 'None'
-        ss += '- Start time: {}\n'.format(tstart)
-        ss += '- Observation duration: {}\n'.format(
-            self.gti.time_sum if self.gti else 'None'
+        tstart = np.atleast_1d(self.gti.time_start.fits)[0] if self.gti else "None"
+        ss += "- Start time: {}\n".format(tstart)
+        ss += "- Observation duration: {}\n".format(
+            self.gti.time_sum if self.gti else "None"
         )
-        ss += '- Dead-time fraction: {:5.3f} %\n'.format(
+        ss += "- Dead-time fraction: {:5.3f} %\n".format(
             100 * self.observation_dead_time_fraction
         )
 
@@ -130,22 +130,22 @@ class DataStoreObservation(object):
 
     def __init__(self, obs_id, data_store):
         # Assert that `obs_id` is available
-        if obs_id not in data_store.obs_table['OBS_ID']:
-            raise ValueError('OBS_ID = {} not in obs index table.'.format(obs_id))
-        if obs_id not in data_store.hdu_table['OBS_ID']:
-            raise ValueError('OBS_ID = {} not in HDU index table.'.format(obs_id))
+        if obs_id not in data_store.obs_table["OBS_ID"]:
+            raise ValueError("OBS_ID = {} not in obs index table.".format(obs_id))
+        if obs_id not in data_store.hdu_table["OBS_ID"]:
+            raise ValueError("OBS_ID = {} not in HDU index table.".format(obs_id))
 
         self.obs_id = obs_id
         self.data_store = data_store
 
     def __str__(self):
-        ss = 'Info for OBS_ID = {}\n'.format(self.obs_id)
-        ss += '- Start time: {:.2f}\n'.format(self.tstart.mjd)
-        ss += '- Pointing pos: RA {:.2f} / Dec {:.2f}\n'.format(
+        ss = "Info for OBS_ID = {}\n".format(self.obs_id)
+        ss += "- Start time: {:.2f}\n".format(self.tstart.mjd)
+        ss += "- Pointing pos: RA {:.2f} / Dec {:.2f}\n".format(
             self.pointing_radec.ra, self.pointing_radec.dec
         )
-        ss += '- Observation duration: {}\n'.format(self.observation_time_duration)
-        ss += '- Dead-time fraction: {:5.3f} %\n'.format(
+        ss += "- Observation duration: {}\n".format(self.observation_time_duration)
+        ss += "- Dead-time fraction: {:5.3f} %\n".format(
             100 * self.observation_dead_time_fraction
         )
 
@@ -193,32 +193,32 @@ class DataStoreObservation(object):
     @property
     def events(self):
         """Load `gammapy.data.EventList` object."""
-        return self.load(hdu_type='events')
+        return self.load(hdu_type="events")
 
     @property
     def gti(self):
         """Load `gammapy.data.GTI` object."""
-        return self.load(hdu_type='gti')
+        return self.load(hdu_type="gti")
 
     @property
     def aeff(self):
         """Load effective area object."""
-        return self.load(hdu_type='aeff')
+        return self.load(hdu_type="aeff")
 
     @property
     def edisp(self):
         """Load energy dispersion object."""
-        return self.load(hdu_type='edisp')
+        return self.load(hdu_type="edisp")
 
     @property
     def psf(self):
         """Load point spread function object."""
-        return self.load(hdu_type='psf')
+        return self.load(hdu_type="psf")
 
     @property
     def bkg(self):
         """Load background object."""
-        return self.load(hdu_type='bkg')
+        return self.load(hdu_type="bkg")
 
     @lazyproperty
     def obs_info(self):
@@ -230,7 +230,7 @@ class DataStoreObservation(object):
     def tstart(self):
         """Observation start time (`~astropy.time.Time`)."""
         met_ref = time_ref_from_dict(self.data_store.obs_table.meta)
-        met = Quantity(self.obs_info['TSTART'].astype('float64'), 'second')
+        met = Quantity(self.obs_info["TSTART"].astype("float64"), "second")
         time = met_ref + met
         return time
 
@@ -238,7 +238,7 @@ class DataStoreObservation(object):
     def tstop(self):
         """Observation stop time (`~astropy.time.Time`)."""
         met_ref = time_ref_from_dict(self.data_store.obs_table.meta)
-        met = Quantity(self.obs_info['TSTOP'].astype('float64'), 'second')
+        met = Quantity(self.obs_info["TSTOP"].astype("float64"), "second")
         time = met_ref + met
         return time
 
@@ -248,7 +248,7 @@ class DataStoreObservation(object):
 
         The wall time, including dead-time.
         """
-        return Quantity(self.obs_info['ONTIME'], 'second')
+        return Quantity(self.obs_info["ONTIME"], "second")
 
     @lazyproperty
     def observation_live_time_duration(self):
@@ -259,7 +259,7 @@ class DataStoreObservation(object):
         Computed as ``t_live = t_observation * (1 - f_dead)``
         where ``f_dead`` is the dead-time fraction.
         """
-        return Quantity(self.obs_info['LIVETIME'], 'second')
+        return Quantity(self.obs_info["LIVETIME"], "second")
 
     @lazyproperty
     def observation_dead_time_fraction(self):
@@ -275,30 +275,30 @@ class DataStoreObservation(object):
         The dead-time fraction is used in the live-time computation,
         which in turn is used in the exposure and flux computation.
         """
-        return 1 - self.obs_info['DEADC']
+        return 1 - self.obs_info["DEADC"]
 
     @lazyproperty
     def pointing_radec(self):
         """Pointing RA / DEC sky coordinates (`~astropy.coordinates.SkyCoord`)."""
-        lon, lat = self.obs_info['RA_PNT'], self.obs_info['DEC_PNT']
-        return SkyCoord(lon, lat, unit='deg', frame='icrs')
+        lon, lat = self.obs_info["RA_PNT"], self.obs_info["DEC_PNT"]
+        return SkyCoord(lon, lat, unit="deg", frame="icrs")
 
     @lazyproperty
     def pointing_altaz(self):
         """Pointing ALT / AZ sky coordinates (`~astropy.coordinates.SkyCoord`)."""
-        alt, az = self.obs_info['ALT_PNT'], self.obs_info['AZ_PNT']
-        return SkyCoord(az, alt, unit='deg', frame='altaz')
+        alt, az = self.obs_info["ALT_PNT"], self.obs_info["AZ_PNT"]
+        return SkyCoord(az, alt, unit="deg", frame="altaz")
 
     @lazyproperty
     def pointing_zen(self):
         """Pointing zenith angle sky (`~astropy.units.Quantity`)."""
-        return Quantity(self.obs_info['ZEN_PNT'], unit='deg')
+        return Quantity(self.obs_info["ZEN_PNT"], unit="deg")
 
     @lazyproperty
     def target_radec(self):
         """Target RA / DEC sky coordinates (`~astropy.coordinates.SkyCoord`)."""
-        lon, lat = self.obs_info['RA_OBJ'], self.obs_info['DEC_OBJ']
-        return SkyCoord(lon, lat, unit='deg', frame='icrs')
+        lon, lat = self.obs_info["RA_OBJ"], self.obs_info["DEC_OBJ"]
+        return SkyCoord(lon, lat, unit="deg", frame="icrs")
 
     @lazyproperty
     def observatory_earth_location(self):
@@ -308,7 +308,7 @@ class DataStoreObservation(object):
     @lazyproperty
     def muoneff(self):
         """Observation muon efficiency."""
-        return self.obs_info['MUONEFF']
+        return self.obs_info["MUONEFF"]
 
     def peek(self):
         """Quick-look plots in a few panels."""
@@ -371,19 +371,19 @@ class DataStoreObservation(object):
         messages = []
         # Check that events table is not empty
         if len(self.events.table) == 0:
-            messages.append('events table empty')
+            messages.append("events table empty")
         # Check that thresholds are meaningful for aeff
-        if self.aeff.meta['LO_THRES'] >= self.aeff.meta['HI_THRES']:
-            messages.append('LO_THRES >= HI_THRES in effective area meta data')
+        if self.aeff.meta["LO_THRES"] >= self.aeff.meta["HI_THRES"]:
+            messages.append("LO_THRES >= HI_THRES in effective area meta data")
         # Check that maximum value of aeff is greater than zero
         if np.max(self.aeff.data.data) <= 0:
-            messages.append('maximum entry of effective area table <= 0')
+            messages.append("maximum entry of effective area table <= 0")
         # Check that maximum value of edisp matrix is greater than zero
         if np.max(self.edisp.data.data) <= 0:
-            messages.append('maximum entry of energy dispersion table <= 0')
+            messages.append("maximum entry of energy dispersion table <= 0")
         # Check that thresholds are meaningful for psf
         if self.psf.energy_thresh_lo >= self.psf.energy_thresh_hi:
-            messages.append('LO_THRES >= HI_THRES in psf meta data')
+            messages.append("LO_THRES >= HI_THRES in psf meta data")
 
         return messages
 
@@ -400,16 +400,16 @@ class DataStoreObservation(object):
         """
         # maps the ObservationCTA class attributes to the DataStoreObservation properties
         props = {
-            'obs_id': 'obs_id',
-            'gti': 'gti',
-            'events': 'events',
-            'aeff': 'aeff',
-            'edisp': 'edisp',
-            'psf': 'psf',
-            'bkg': 'bkg',
-            'pointing_radec': 'pointing_radec',
-            'observation_live_time_duration': 'observation_live_time_duration',
-            'observation_dead_time_fraction': 'observation_dead_time_fraction',
+            "obs_id": "obs_id",
+            "gti": "gti",
+            "events": "events",
+            "aeff": "aeff",
+            "edisp": "edisp",
+            "psf": "psf",
+            "bkg": "bkg",
+            "pointing_radec": "pointing_radec",
+            "observation_live_time_duration": "observation_live_time_duration",
+            "observation_dead_time_fraction": "observation_dead_time_fraction",
         }
 
         for obs_cta_kwarg, ds_obs_prop in props.items():
@@ -429,8 +429,8 @@ class ObservationList(UserList):
     """
 
     def __str__(self):
-        s = self.__class__.__name__ + '\n'
-        s += 'Number of observations: {}\n'.format(len(self))
+        s = self.__class__.__name__ + "\n"
+        s += "Number of observations: {}\n".format(len(self))
         for obs in self:
             s += str(obs)
         return s

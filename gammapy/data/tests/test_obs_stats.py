@@ -10,21 +10,21 @@ from ...utils.testing import requires_data, requires_dependency
 from ...background import ReflectedRegionsBackgroundEstimator
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def obs_list():
-    data_store = DataStore.from_dir('$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/')
+    data_store = DataStore.from_dir("$GAMMAPY_EXTRA/datasets/hess-crab4-hd-hap-prod2/")
     run_list = [23523, 23526]
     return ObservationList([data_store.obs(_) for _ in run_list])
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def on_region():
     pos = SkyCoord(83.63 * u.deg, 22.01 * u.deg)
     on_size = 0.3 * u.deg
     return CircleSkyRegion(pos, on_size)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def stats(on_region, obs_list):
     obs = obs_list[0]
     bge = ReflectedRegionsBackgroundEstimator(on_region=on_region, obs_list=obs)
@@ -32,7 +32,7 @@ def stats(on_region, obs_list):
     return ObservationStats.from_obs(obs, bg)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def stats_stacked(on_region, obs_list):
     bge = ReflectedRegionsBackgroundEstimator(on_region=on_region, obs_list=obs_list)
     bge.run()
@@ -42,23 +42,23 @@ def stats_stacked(on_region, obs_list):
     )
 
 
-@requires_data('gammapy-extra')
-@requires_dependency('scipy')
+@requires_data("gammapy-extra")
+@requires_dependency("scipy")
 class TestObservationStats(object):
     def test_str(self, stats):
         text = str(stats)
-        assert 'Observation summary report' in text
+        assert "Observation summary report" in text
 
     def test_to_dict(self, stats):
         data = stats.to_dict()
-        assert data['n_on'] == 235
-        assert data['n_off'] == 107
-        assert_allclose(data['alpha'], 0.333, rtol=1e-2)
-        assert_allclose(data['sigma'], 16.973577445630323, rtol=1e-3)
+        assert data["n_on"] == 235
+        assert data["n_off"] == 107
+        assert_allclose(data["alpha"], 0.333, rtol=1e-2)
+        assert_allclose(data["sigma"], 16.973577445630323, rtol=1e-3)
 
     def test_stack(self, stats_stacked):
         data = stats_stacked.to_dict()
-        assert data['n_on'] == 454
-        assert data['n_off'] == 226
-        assert_allclose(data['alpha'], 0.333, rtol=1e-2)
-        assert_allclose(data['sigma'], 22.89225735104067, rtol=1e-3)
+        assert data["n_on"] == 454
+        assert data["n_off"] == 226
+        assert_allclose(data["alpha"], 0.333, rtol=1e-2)
+        assert_allclose(data["sigma"], 22.89225735104067, rtol=1e-3)

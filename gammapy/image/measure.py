@@ -4,11 +4,11 @@ import numpy as np
 from astropy.units import Quantity
 
 __all__ = [
-    'measure_containment_fraction',
-    'measure_containment_radius',
-    'measure_image_moments',
-    'measure_containment',
-    'measure_curve_of_growth',
+    "measure_containment_fraction",
+    "measure_containment_radius",
+    "measure_image_moments",
+    "measure_containment",
+    "measure_curve_of_growth",
 ]
 
 
@@ -152,7 +152,7 @@ def measure_curve_of_growth(image, position, radius_max=None, radius_n=10):
     containment : `~astropy.units.Quantity`
         Corresponding contained flux.
     """
-    radius_max = radius_max if radius_max is not None else Quantity(0.2, 'deg')
+    radius_max = radius_max if radius_max is not None else Quantity(0.2, "deg")
     containment = []
     radii = Quantity(np.linspace(0, radius_max.value, radius_n), radius_max.unit)
     for radius in radii:
@@ -162,4 +162,4 @@ def measure_curve_of_growth(image, position, radius_max=None, radius_n=10):
 
 def _wrapped_coordinates(image):
     coords = image.geom.get_coord().skycoord
-    return coords.data.lon.wrap_at('180d'), coords.data.lat
+    return coords.data.lon.wrap_at("180d"), coords.data.lat

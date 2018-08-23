@@ -11,7 +11,7 @@ from .obs_table import ObservationTable
 from .hdu_index_table import HDUIndexTable
 from .observations import DataStoreObservation, ObservationList
 
-__all__ = ['DataStore']
+__all__ = ["DataStore"]
 
 log = logging.getLogger(__name__)
 
@@ -43,13 +43,13 @@ class DataStore(object):
     >>> data_store.info()
     """
 
-    DEFAULT_HDU_TABLE = 'hdu-index.fits.gz'
+    DEFAULT_HDU_TABLE = "hdu-index.fits.gz"
     """Default HDU table filename."""
 
-    DEFAULT_OBS_TABLE = 'obs-index.fits.gz'
+    DEFAULT_OBS_TABLE = "obs-index.fits.gz"
     """Default observation table filename."""
 
-    DEFAULT_NAME = 'noname'
+    DEFAULT_NAME = "noname"
     """Default data store name."""
 
     def __init__(self, hdu_table=None, obs_table=None, name=None):
@@ -67,16 +67,16 @@ class DataStore(object):
     ):
         """Construct from HDU and observation index table files."""
         if hdu_table_filename:
-            log.debug('Reading {}'.format(hdu_table_filename))
-            hdu_table = HDUIndexTable.read(str(hdu_table_filename), format='fits')
+            log.debug("Reading {}".format(hdu_table_filename))
+            hdu_table = HDUIndexTable.read(str(hdu_table_filename), format="fits")
 
-            hdu_table.meta['BASE_DIR'] = base_dir
+            hdu_table.meta["BASE_DIR"] = base_dir
         else:
             hdu_table = None
 
         if obs_table_filename:
-            log.debug('Reading {}'.format(str(obs_table_filename)))
-            obs_table = ObservationTable.read(str(obs_table_filename), format='fits')
+            log.debug("Reading {}".format(str(obs_table_filename)))
+            obs_table = ObservationTable.read(str(obs_table_filename), format="fits")
         else:
             obs_table = None
 
@@ -100,10 +100,10 @@ class DataStore(object):
     @classmethod
     def from_config(cls, config):
         """Create from a config dict."""
-        base_dir = config['base_dir']
-        name = config.get('name', cls.DEFAULT_NAME)
-        hdu_table_filename = config.get('hduindx', cls.DEFAULT_HDU_TABLE)
-        obs_table_filename = config.get('obsindx', cls.DEFAULT_OBS_TABLE)
+        base_dir = config["base_dir"]
+        name = config.get("name", cls.DEFAULT_NAME)
+        hdu_table_filename = config.get("hduindx", cls.DEFAULT_HDU_TABLE)
+        obs_table_filename = config.get("obsindx", cls.DEFAULT_OBS_TABLE)
 
         hdu_table_filename = cls._find_file(hdu_table_filename, base_dir)
         obs_table_filename = cls._find_file(obs_table_filename, base_dir)
@@ -131,7 +131,7 @@ class DataStore(object):
         elif path2.is_file():
             filename = path2
         else:
-            raise OSError('File not found at {} or {}'.format(path1, path2))
+            raise OSError("File not found at {} or {}".format(path1, path2))
 
         return filename
 
@@ -141,11 +141,11 @@ class DataStore(object):
             stream = sys.stdout
 
         print(file=stream)
-        print('Data store summary info:', file=file)
-        print('name: {}'.format(self.name), file=file)
-        print('', file=file)
+        print("Data store summary info:", file=file)
+        print("name: {}".format(self.name), file=file)
+        print("", file=file)
         self.hdu_table.summary(file=file)
-        print('', file=file)
+        print("", file=file)
         self.obs_table.summary(file=file)
 
     def obs(self, obs_id):
@@ -184,7 +184,7 @@ class DataStore(object):
                 obs = self.obs(_)
             except ValueError as err:
                 if skip_missing:
-                    log.warn('Obs {} not in store, skip.'.format(_))
+                    log.warn("Obs {} not in store, skip.".format(_))
                     continue
                 else:
                     raise err
@@ -207,7 +207,7 @@ class DataStore(object):
         list : python list of object
             Object depends on type, e.g. for 'events' it is a list of `~gammapy.data.EventList`.
         """
-        obs_ids = self.obs_table['OBS_ID']
+        obs_ids = self.obs_table["OBS_ID"]
         return self.load_many(obs_ids=obs_ids, hdu_type=hdu_type, hdu_class=hdu_class)
 
     def load_many(self, obs_ids, hdu_type=None, hdu_class=None):
@@ -247,7 +247,7 @@ class DataStore(object):
         results = OrderedDict()
 
         # Loop over all obs_ids in obs_table
-        for obs_id in self.obs_table['OBS_ID']:
+        for obs_id in self.obs_table["OBS_ID"]:
             messages = self.obs(obs_id).check_observation()
             if len(messages) > 0:
                 results[obs_id] = messages
@@ -260,13 +260,13 @@ class DataStore(object):
         # Todo: This is broken - remove or fix?
         sane = True
         if logger is None:
-            logger = logging.getLogger('default')
+            logger = logging.getLogger("default")
 
-        logger.info('Checking event list files')
+        logger.info("Checking event list files")
         available = self.check_available_event_lists(logger)
         if np.any(~available):
             logger.warning(
-                'Number of missing event list files: {}'.format(
+                "Number of missing event list files: {}".format(
                     np.invert(available).sum()
                 )
             )
@@ -274,7 +274,7 @@ class DataStore(object):
         # TODO: implement better, more complete integrity checks.
         return sane
 
-    def make_table_of_files(self, observation_table=None, filetypes=['events']):
+    def make_table_of_files(self, observation_table=None, filetypes=["events"]):
         """Make list of files in the datastore directory.
 
         Parameters
@@ -299,15 +299,15 @@ class DataStore(object):
         for observation in observation_table:
             for filetype in filetypes:
                 row = dict()
-                row['OBS_ID'] = observation['OBS_ID']
-                row['filetype'] = filetype
+                row["OBS_ID"] = observation["OBS_ID"]
+                row["filetype"] = filetype
                 filename = self.filename(
-                    observation['OBS_ID'], filetype=filetype, abspath=True
+                    observation["OBS_ID"], filetype=filetype, abspath=True
                 )
-                row['filename'] = filename
+                row["filename"] = filename
                 data.append(row)
 
-        return Table(data=data, names=['OBS_ID', 'filetype', 'filename'])
+        return Table(data=data, names=["OBS_ID", "filetype", "filename"])
 
     def check_available_event_lists(self, logger=None):
         """Check if all event lists are available.
@@ -323,16 +323,16 @@ class DataStore(object):
         raise NotImplementedError
 
         observation_table = self.obs_table
-        file_available = np.ones(len(observation_table), dtype='bool')
+        file_available = np.ones(len(observation_table), dtype="bool")
         for ii in range(len(observation_table)):
-            obs_id = observation_table['OBS_ID'][ii]
+            obs_id = observation_table["OBS_ID"][ii]
             filename = self.filename(obs_id)
             if not make_path(filename).is_file():
                 file_available[ii] = False
                 if logger:
                     logger.warning(
-                        'For OBS_ID = {:06d} the event list file is missing: {}'
-                        ''.format(obs_id, filename)
+                        "For OBS_ID = {:06d} the event list file is missing: {}"
+                        "".format(obs_id, filename)
                     )
 
         return file_available
@@ -357,15 +357,15 @@ class DataStore(object):
 
         outdir = make_path(outdir)
         if isinstance(obs_id, ObservationTable):
-            obs_id = obs_id['OBS_ID'].data
+            obs_id = obs_id["OBS_ID"].data
 
         hdutable = self.hdu_table
-        hdutable.add_index('OBS_ID')
-        with hdutable.index_mode('discard_on_copy'):
+        hdutable.add_index("OBS_ID")
+        with hdutable.index_mode("discard_on_copy"):
             subhdutable = hdutable.loc[obs_id]
         if hdu_class is not None:
-            subhdutable.add_index('HDU_CLASS')
-            with subhdutable.index_mode('discard_on_copy'):
+            subhdutable.add_index("HDU_CLASS")
+            with subhdutable.index_mode("discard_on_copy"):
                 subhdutable = subhdutable.loc[hdu_class]
         subobstable = self.obs_table.select_obs_id(obs_id)
 
@@ -374,17 +374,17 @@ class DataStore(object):
             loc = subhdutable.location_info(idx)
             targetdir = outdir / loc.file_dir
             targetdir.mkdir(exist_ok=True, parents=True)
-            cmd = ['cp', '-v'] if verbose else ['cp']
+            cmd = ["cp", "-v"] if verbose else ["cp"]
             if not overwrite:
-                cmd += ['-n']
+                cmd += ["-n"]
             cmd += [str(loc.path()), str(targetdir)]
             subprocess.call(cmd)
 
         subhdutable.write(
-            str(outdir / self.DEFAULT_HDU_TABLE), format='fits', overwrite=overwrite
+            str(outdir / self.DEFAULT_HDU_TABLE), format="fits", overwrite=overwrite
         )
         subobstable.write(
-            str(outdir / self.DEFAULT_OBS_TABLE), format='fits', overwrite=overwrite
+            str(outdir / self.DEFAULT_OBS_TABLE), format="fits", overwrite=overwrite
         )
 
     def data_summary(self, obs_id=None, summed=False):
@@ -398,29 +398,29 @@ class DataStore(object):
             Sum up file size?
         """
         if obs_id is None:
-            obs_id = self.obs_table['OBS_ID'].data
+            obs_id = self.obs_table["OBS_ID"].data
 
         hdut = self.hdu_table
-        hdut.add_index('OBS_ID')
+        hdut.add_index("OBS_ID")
         subhdut = hdut.loc[obs_id]
 
-        subhdut_grpd = subhdut.group_by('OBS_ID')
-        colnames = subhdut_grpd.groups[0]['HDU_CLASS']
+        subhdut_grpd = subhdut.group_by("OBS_ID")
+        colnames = subhdut_grpd.groups[0]["HDU_CLASS"]
         temp = np.zeros(len(colnames), dtype=int)
 
         rows = []
         for key, group in zip(subhdut_grpd.groups.keys, subhdut_grpd.groups):
             # This is needed to get the column order right
-            group.add_index('HDU_CLASS')
-            vals = group.loc[colnames]['SIZE']
+            group.add_index("HDU_CLASS")
+            vals = group.loc[colnames]["SIZE"]
             if summed:
                 temp = temp + vals
             else:
-                rows.append(np.append(key['OBS_ID'], vals))
+                rows.append(np.append(key["OBS_ID"], vals))
 
         if summed:
             rows.append(temp)
         else:
-            colnames = np.append(['OBS_ID'], colnames)
+            colnames = np.append(["OBS_ID"], colnames)
 
         return Table(rows=rows, names=colnames)

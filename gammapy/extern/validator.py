@@ -19,7 +19,7 @@ def validate_physical_type(name, value, physical_type):
             if not value.unit.physical_type in physical_type:
                 raise TypeError(
                     "{0} should be given in units of {1}".format(
-                        name, ', '.join(physical_type)
+                        name, ", ".join(physical_type)
                     )
                 )
 
@@ -32,16 +32,16 @@ def validate_scalar(name, value, domain=None, physical_type=None):
         if not np.isscalar(value) or not np.isreal(value):
             raise TypeError("{0} should be a scalar floating point value".format(name))
 
-    if domain == 'positive':
+    if domain == "positive":
         if value < 0.:
             raise ValueError("{0} should be positive".format(name))
-    elif domain == 'strictly-positive':
+    elif domain == "strictly-positive":
         if value <= 0.:
             raise ValueError("{0} should be strictly positive".format(name))
-    elif domain == 'negative':
+    elif domain == "negative":
         if value > 0.:
             raise ValueError("{0} should be negative".format(name))
-    elif domain == 'strictly-negative':
+    elif domain == "strictly-negative":
         if value >= 0.:
             raise ValueError("{0} should be strictly negative".format(name))
     elif type(domain) in [tuple, list] and len(domain) == 2:
