@@ -100,44 +100,6 @@ class DataStore(object):
             name=name,
         )
 
-    @classmethod
-    def from_config(cls, config):
-        """Create from a config dict."""
-        base_dir = config['base_dir']
-        name = config.get('name', cls.DEFAULT_NAME)
-        hdu_table_filename = config.get('hduindx', cls.DEFAULT_HDU_TABLE)
-        obs_table_filename = config.get('obsindx', cls.DEFAULT_OBS_TABLE)
-
-        hdu_table_filename = cls._find_file(hdu_table_filename, base_dir)
-        obs_table_filename = cls._find_file(obs_table_filename, base_dir)
-
-        return cls.from_files(
-            base_dir=base_dir,
-            hdu_table_filename=hdu_table_filename,
-            obs_table_filename=obs_table_filename,
-            name=name,
-        )
-
-    @staticmethod
-    def _find_file(filename, dir):
-        """Find a file at an absolute or relative location.
-
-        - First tries ``Path(filename)``
-        - Second tries ``Path(dir) / filename``
-        - Raises ``OSError`` if both don't exist.
-        """
-        path1 = make_path(filename)
-        path2 = make_path(dir) / filename
-
-        if path1.is_file():
-            filename = path1
-        elif path2.is_file():
-            filename = path2
-        else:
-            raise OSError('File not found at {} or {}'.format(path1, path2))
-
-        return filename
-
     def info(self, show=True):
         """Print some info."""
         s = 'Data store summary info:\n'
@@ -241,100 +203,6 @@ class DataStore(object):
 
         return things
 
-    def check_observations(self):
-        """Perform some sanity checks for all observations.
-
-        Returns
-        -------
-        results : OrderedDict
-            dictionary containing failure messages for all runs that fail a check.
-        """
-
-        results = OrderedDict()
-
-        # Loop over all obs_ids in obs_table
-        for obs_id in self.obs_table['OBS_ID']:
-            messages = self.obs(obs_id).check_observation()
-            if len(messages) > 0:
-                results[obs_id] = messages
-
-        return results
-
-    def check_integrity(self, logger=None):
-        """Check integrity, i.e. whether index and observation table match.
-        """
-        # Todo: This is broken - remove or fix?
-        sane = True
-        if logger is None:
-            logger = logging.getLogger('default')
-
-        logger.info('Checking event list files')
-        available = self.check_available_event_lists(logger)
-        if np.any(~available):
-            logger.warning('Number of missing event list files: {}'.format(np.invert(available).sum()))
-
-        # TODO: implement better, more complete integrity checks.
-        return sane
-
-    def make_table_of_files(self, observation_table=None, filetypes=['events']):
-        """Make list of files in the datastore directory.
-
-        Parameters
-        ----------
-        observation_table : `~gammapy.data.ObservationTable` or None
-            Observation table (``None`` means select all observations).
-        filetypes : list of str
-            File types (TODO: document in a central location and reference from here).
-
-        Returns
-        -------
-        table : `~astropy.table.Table`
-            Table summarising info about files.
-        """
-        # TODO : remove or fix
-        raise NotImplementedError
-
-        if observation_table is None:
-            observation_table = ObservationTable(self.obs_table)
-
-        data = []
-        for observation in observation_table:
-            for filetype in filetypes:
-                row = dict()
-                row['OBS_ID'] = observation['OBS_ID']
-                row['filetype'] = filetype
-                filename = self.filename(observation['OBS_ID'], filetype=filetype, abspath=True)
-                row['filename'] = filename
-                data.append(row)
-
-        return Table(data=data, names=['OBS_ID', 'filetype', 'filename'])
-
-    def check_available_event_lists(self, logger=None):
-        """Check if all event lists are available.
-
-        TODO: extend this function, or combine e.g. with ``make_table_of_files``.
-
-        Returns
-        -------
-        file_available : `~numpy.ndarray`
-            Boolean mask which files are available.
-        """
-        # TODO: This is broken. Remove (covered by HDUlocation class)?
-        raise NotImplementedError
-
-        observation_table = self.obs_table
-        file_available = np.ones(len(observation_table), dtype='bool')
-        for ii in range(len(observation_table)):
-            obs_id = observation_table['OBS_ID'][ii]
-            filename = self.filename(obs_id)
-            if not make_path(filename).is_file():
-                file_available[ii] = False
-                if logger:
-                    logger.warning('For OBS_ID = {:06d} the event list file is missing: {}'
-                                   ''.format(obs_id, filename))
-
-        return file_available
-
     def copy_obs(self, obs_id, outdir, hdu_class=None, verbose=False, overwrite=False):
         """Create a new `~gammapy.data.DataStore` containing a subset of observations.
 
@@ -418,3 +286,63 @@ class DataStore(object):
             colnames = np.append(['OBS_ID'], colnames)
 
         return Table(rows=rows, names=colnames)
+
+    def check_observations(self):
+        """Perform some sanity checks for all observations.
+
+        Returns
+        -------
+        results : OrderedDict
+            dictionary containing failure messages for all runs that fail a check.
+        """
+        results = OrderedDict()
+
+        # Loop over all obs_ids in obs_table
+        for obs_id in self.obs_table['OBS_ID']:
+            messages = self.obs(obs_id).check_observation()
+            if len(messages) > 0:
+                results[obs_id] = messages
+
+        return results
+
+    def check_integrity(self, logger=None):
+        """Check integrity, i.e. whether index and observation table match.
+        """
+        # Todo: This is broken - remove or fix?
+        sane = True
+        if logger is None:
+            logger = logging.getLogger('default')
+
+        logger.info('Checking event list files')
+        available = self.check_available_event_lists(logger)
+        if np.any(~available):
+            logger.warning('Number of missing event list files: {}'.format(np.invert(available).sum()))
+
+        # TODO: implement better, more complete integrity checks.
+        return sane
+
+    def check_available_event_lists(self, logger=None):
+        """Check if all event lists are available.
+
+        TODO: extend this function, or combine e.g. with ``make_table_of_files``.
+
+        Returns
+        -------
+        file_available : `~numpy.ndarray`
+            Boolean mask which files are available.
+        """
+        # TODO: This is broken. Remove (covered by HDUlocation class)?
+        raise NotImplementedError
+
+        observation_table = self.obs_table
+        file_available = np.ones(len(observation_table), dtype='bool')
+        for ii in range(len(observation_table)):
+            obs_id = observation_table['OBS_ID'][ii]
+            filename = self.filename(obs_id)
+            if not make_path(filename).is_file():
+                file_available[ii] = False
+                if logger:
+                    logger.warning('For OBS_ID = {:06d} the event list file is missing: {}'
+                                   ''.format(obs_id, filename))
+
+        return file_available

@@ -17,6 +17,9 @@ def test_datastore_hd_hap(data_store):
     """Test HESS HAP-HD data access."""
     obs = data_store.obs(obs_id=23523)
 
+    txt = data_store.info(show=False)
+    assert txt.startswith('Data store summary info')
+
     assert str(type(obs.events)) == "<class 'gammapy.data.event_list.EventList'>"
     assert str(type(obs.gti)) == "<class 'gammapy.data.gti.GTI'>"
     assert str(type(obs.aeff)) == "<class 'gammapy.irf.effective_area.EffectiveAreaTable2D'>"

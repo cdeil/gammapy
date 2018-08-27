@@ -341,33 +341,6 @@ class DataStoreObservation(object):
                                       exposure=exposure, psf_value=psf_value)
         return psf
 
-    def check_observation(self):
-        """Perform some basic sanity checks on this observation.
-
-        Returns
-        -------
-        results : list
-            List with failure messages for the checks that failed
-        """
-        messages = []
-        # Check that events table is not empty
-        if len(self.events.table) == 0:
-            messages.append('events table empty')
-        # Check that thresholds are meaningful for aeff
-        if self.aeff.meta['LO_THRES'] >= self.aeff.meta['HI_THRES']:
-            messages.append('LO_THRES >= HI_THRES in effective area meta data')
-        # Check that maximum value of aeff is greater than zero
-        if np.max(self.aeff.data.data) <= 0:
-            messages.append('maximum entry of effective area table <= 0')
-        # Check that maximum value of edisp matrix is greater than zero
-        if np.max(self.edisp.data.data) <= 0:
-            messages.append('maximum entry of energy dispersion table <= 0')
-        # Check that thresholds are meaningful for psf
-        if self.psf.energy_thresh_lo >= self.psf.energy_thresh_hi:
-            messages.append('LO_THRES >= HI_THRES in psf meta data')
-
-        return messages
-
     def to_observation_cta(self):
         """Convert to `~gammapy.data.ObservationCTA`.
 
@@ -401,6 +374,33 @@ class DataStoreObservation(object):
                 props[obs_cta_kwarg] = None
 
         return ObservationCTA(**props)
+
+    def check_observation(self):
+        """Perform some basic sanity checks on this observation.
+
+        Returns
+        -------
+        results : list
+            List with failure messages for the checks that failed
+        """
+        messages = []
+        # Check that events table is not empty
+        if len(self.events.table) == 0:
+            messages.append('events table empty')
+        # Check that thresholds are meaningful for aeff
+        if self.aeff.meta['LO_THRES'] >= self.aeff.meta['HI_THRES']:
+            messages.append('LO_THRES >= HI_THRES in effective area meta data')
+        # Check that maximum value of aeff is greater than zero
+        if np.max(self.aeff.data.data) <= 0:
+            messages.append('maximum entry of effective area table <= 0')
+        # Check that maximum value of edisp matrix is greater than zero
+        if np.max(self.edisp.data.data) <= 0:
+            messages.append('maximum entry of energy dispersion table <= 0')
+        # Check that thresholds are meaningful for psf
+        if self.psf.energy_thresh_lo >= self.psf.energy_thresh_hi:
+            messages.append('LO_THRES >= HI_THRES in psf meta data')
+
+        return messages
 
 
 class ObservationList(UserList):
