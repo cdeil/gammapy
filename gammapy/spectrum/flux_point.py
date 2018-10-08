@@ -9,10 +9,10 @@ from astropy.io.registry import IORegistryError
 from ..utils.scripts import make_path
 from ..utils.table import table_standardise_units_copy, table_from_row_data
 from ..utils.fitting import Fit
-from ..stats.fit_statistics import chi2
 from .models import PowerLaw
 from .powerlaw import power_law_integral_flux
-from . import SpectrumObservationList, SpectrumObservation
+from .observation import SpectrumObservationList, SpectrumObservation
+from .profile import FluxPointProfiles
 
 __all__ = ["FluxPoints", "FluxPointEstimator", "FluxPointFit"]
 
@@ -647,7 +647,7 @@ class FluxPointEstimator(object):
         return self._obs
 
     def run(self):
-        """Run the flux point estimator
+        """Run the flux point estimator.
         
         Returns
         -------
@@ -729,27 +729,15 @@ class FluxPointEstimator(object):
         return {"dnde_ul": u.Quantity(ul, amplitude.unit)}
 
     def compute_dnde(self, model, energy_group, energy_ref, sqrt_ts_threshold=2):
+        """
+        Run fit for a flux point.
+        """
         from .fit import SpectrumFit
 
         energy_min = energy_group.energy_min
         energy_max = energy_group.energy_max
 
-        quality_orig = []
-
-        for index in range(len(self.obs)):
-            # Set quality bins to only bins in energy_group
-            quality_orig_unit = self.obs[index].on_vector.quality
-            quality_len = len(quality_orig_unit)
-            quality_orig.append(quality_orig_unit)
-            quality = np.zeros(quality_len, dtype=int)
-            for bin in range(quality_len):
-                if (
-                    (bin < energy_group.bin_idx_min)
-                    or (bin > energy_group.bin_idx_max)
-                    or (energy_group.bin_type != "normal")
-                ):
-                    quality[bin] = 1
-            self.obs[index].on_vector.quality = quality
+        quality_original = self._obs_energy_group_apply(self.obs, energy_group)
 
         # Set reference and remove min amplitude
         model.parameters["reference"].value = energy_ref.to("TeV").value
@@ -757,8 +745,9 @@ class FluxPointEstimator(object):
         self._fit = SpectrumFit(self.obs, model)
         result = self.fit.run()
 
-        for index in range(len(quality_orig)):
-            self.obs[index].on_vector.quality = quality_orig[index]
+        # TODO: this doesn't seem to have any effect.
+        # Why??? Should result in completely incorrect dnde_ul etc.
+        self._obs_energy_group_restore(self.obs, quality_original)
 
         self._best_fit_model = result.model
         dnde, dnde_err = result.model.evaluate_error(energy_ref)
@@ -774,6 +763,67 @@ class FluxPointEstimator(object):
                 ("sqrt_ts", sqrt_ts),
             ]
         )
+
+    # TODO: refactor this class to avoid these shenanigans
+    @staticmethod
+    def _obs_energy_group_apply(obs, energy_group):
+        quality_orig = []
+
+        for index in range(len(obs)):
+            # Set quality bins to only bins in energy_group
+            quality_orig_unit = obs[index].on_vector.quality
+            quality_len = len(quality_orig_unit)
+            quality_orig.append(quality_orig_unit)
+            quality = np.zeros(quality_len, dtype=int)
+            for bin in range(quality_len):
+                if (
+                        (bin < energy_group.bin_idx_min)
+                        or (bin > energy_group.bin_idx_max)
+                        or (energy_group.bin_type != "normal")
+                ):
+                    quality[bin] = 1
+            obs[index].on_vector.quality = quality
+
+        return quality_orig
+
+    # TODO: refactor this class to avoid these shenanigans
+    @staticmethod
+    def _obs_energy_group_restore(obs, quality_original):
+        for index in range(len(quality_original)):
+            obs[index].on_vector.quality = quality_original[index]
+
+    def run_profiles(self, model):
+        """Compute flux point likelihood profiles.
+
+        Parameters
+        ----------
+        model : `~gammapy.spectrum.SpectralModel`
+            Spectrum model
+
+        Returns
+        -------
+        profiles : `~gammapy.spectrum.FluxPointProfiles`
+            Flux point profiles
+        """
+        rows = []
+        for group in self.groups:
+            if group.bin_type != "normal":
+                log.debug("Skipping energy group:\n{}".format(group))
+                continue
+
+            row = self.compute_dnde_profile(group)
+            rows.append(row)
+
+        table = table_from_row_data(rows=rows, meta={})
+        return FluxPointProfiles(table)
+
+    def compute_dnde_profile(self, model, energy_group):
+        """Compute likelihood profile for a given energy bin.
+
+
+        """
+
+
 
 
 class FluxPointFit(Fit):
