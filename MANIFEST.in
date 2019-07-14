@@ -1,4 +1,5 @@
 include README.rst
+include LICENSE.rst
 include LONG_DESCRIPTION.rst
 include CHANGES.rst
 include environment-dev.yml
@@ -9,7 +10,6 @@ include setup.cfg
 
 recursive-include gammapy *.pyx *.pxd *.c *.h
 recursive-include docs *
-recursive-include licenses *
 recursive-include examples *
 recursive-include dev *
 
