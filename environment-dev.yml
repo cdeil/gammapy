@@ -51,3 +51,4 @@ dependencies:
     - pytest-astropy
     - twine
     - parfive
+    - jsonschema
